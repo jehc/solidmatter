@@ -36,7 +36,7 @@ class RenderDialog
           end
         end
         # for some reason we need to collect regularly
-        GC.run 
+        GC.start 
       end
     end
   end
