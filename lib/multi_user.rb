@@ -61,7 +61,7 @@ class ProjectServer
     nil
   end
   
-  def remove_project id
+  def remove_project id  #XXX id should be title 
     @projects.delete_if{|p| p.project_id == id }
     nil
   end
@@ -392,9 +392,27 @@ FakeCompInfo = Struct.new(:volume, :mass, :area, :material, :thumb, :comp_id)
 
 class ProjectServer
   def load_project name
-    Project.load "../projects/#{name.downcase}.smp"
+    Project.load "../../../public/projects/#{name.downcase}.smp"
   rescue 
     nil
+  end
+  
+  alias ap_old add_project
+  def add_project name
+    ap_old
+    pr = @projects.last
+    if name
+      pr.name = name
+      pr.filename = "../../../public/projects/#{name.downcase}.smp"
+      pr.save 
+    end
+    nil
+  end
+  
+  alias rm_old remove_project
+  def remove_project name
+    rm_old name
+    File.delete "../../../public/projects/#{name.downcase}.smp"
   end
   
   def find_components( pr_name, kwds )
@@ -414,11 +432,9 @@ class ProjectServer
     if c
       c_info.area = c.area
       if c.class == Assembly
-        puts "We have an assembly"
         c_info.volume, c_info.mass, dummy = 1,2,3#c.volume_mass_and_cog
         #c_info.thumb = $manager.glview.image_of_parts( c.contained_parts )
       else
-        puts "We have a part"
         c_info.volume, dummy = 1,2 #c.volume_and_cog
         c_info.mass = 3 #c.mass info.volume.to_f
         c_info.material = c.information[:material].name
