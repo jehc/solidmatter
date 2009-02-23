@@ -8,7 +8,7 @@ debug = false
 pid = fork unless debug
 if not debug and not pid
   # create actuall server in seperate process, as running with Gtk has side effects
-  `ruby om_server.rb`  
+  `ruby sm_server.rb`  
 else
   require 'rubygems'
   require 'drb'
