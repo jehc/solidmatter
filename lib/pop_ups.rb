@@ -126,7 +126,7 @@ class OperatorMenu < Gtk::Menu
     end
     # delete
     items[4].signal_connect("activate") do
-      $manager.delete_object operator
+      $manager.project.delete_object operator
     end
     items.each{|i| append i }
     show_all
