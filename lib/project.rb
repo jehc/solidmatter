@@ -6,6 +6,8 @@
 require 'ui/project_dialog.rb'
 require 'ui/material_editor.rb'
 require 'geometry.rb'
+require 'operators.rb'
+require 'image.rb'
 require 'components.rb'
 
 
@@ -47,7 +49,7 @@ class Project
     dia = FileOpenDialog.new :save
     if dia.run == Gtk::Dialog::RESPONSE_ACCEPT
       @filename = dia.filename
-      @filename += '.omp' unless @filename =~ /.omp/
+      @filename += '.smp' unless @filename =~ /.smp/
       save
       dia.destroy
       return true

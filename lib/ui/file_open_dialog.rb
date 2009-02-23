@@ -25,7 +25,7 @@ class FileOpenDialog < Gtk::FileChooserDialog
     if mode == :save or mode == :open
       filter = Gtk::FileFilter.new
       filter.name = GetText._("Solid|matter project")
-      filter.add_pattern "*.omp"
+      filter.add_pattern "*.smp"
       add_filter filter
     else
       # add export-format specific file filter

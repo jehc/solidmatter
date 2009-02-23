@@ -6,6 +6,7 @@
 require 'drb'
 require 'socket'
 require 'project.rb'
+require 'gtkglext'
 require 'ui/account_editor.rb'
 require 'ui/save_request_dialog.rb'
 require 'ui/wait_for_save_dialog.rb'
@@ -74,7 +75,6 @@ class ProjectServer
   
   def add_account
     @accounts << UserAccount.new(DRbObject.new_with_uri "druby://localhost:#{$preferences[:server_port]}")
-    
     nil
   end
   
@@ -183,7 +183,7 @@ class ProjectServer
       case re.type
       when :save then
         pr = @projects.select{|p| p.name == re.what }.first
-        pr.filename = "hosted_projects/#{pr.name}"
+        pr.filename = "projects/#{pr.name}"
         pr.save_file
       end
       @requests.delete re
@@ -381,5 +381,50 @@ class ProjectClient
   def exit
     @polling = false or @poller.join if @poller
     @server.remove_client @client_id if @client_id
+  end
+end
+
+
+
+## ---- Additional methods for communication with opendustrial ---- ##
+
+FakeCompInfo = Struct.new(:volume, :mass, :area, :material, :thumb, :comp_id)
+
+class ProjectServer
+  def load_project name
+    Project.load "../projects/#{name.downcase}.smp"
+  rescue 
+    nil
+  end
+  
+  def find_components( pr_name, kwds )
+    pr = @projects.find{|p| p.name == pr_name } || load_project( pr_name )
+    return [] unless pr
+    comps = pr.all_parts + pr.all_assemblies
+    comps.select{|c| kwds.all?{|kwd| /#{kwd}/i =~ c.information[:name] } }.map do |c|
+      [c.component_id.to_s, c.information[:name], c.information[:author], pr_name]
+    end
+  end
+  
+  def calculate_physical_data( pr_name, c_info )
+    pr = @projects.find{|p| p.name == pr_name } || load_project( pr_name )
+    return unless pr
+    comps = pr.all_parts + pr.all_assemblies
+    c = comps.find{|e| e.component_id.to_s == c_info.comp_id }
+    if c
+      c_info.area = c.area
+      if c.class == Assembly
+        puts "We have an assembly"
+        c_info.volume, c_info.mass, dummy = 1,2,3#c.volume_mass_and_cog
+        #c_info.thumb = $manager.glview.image_of_parts( c.contained_parts )
+      else
+        puts "We have a part"
+        c_info.volume, dummy = 1,2 #c.volume_and_cog
+        c_info.mass = 3 #c.mass info.volume.to_f
+        c_info.material = c.information[:material].name
+        #c_info.thumb = $manager.glview.image_of_parts [c]
+      end
+      return c_info
+    end
   end
 end
