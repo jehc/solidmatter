@@ -387,6 +387,7 @@ end
 
 
 ## ---- Additional methods for communication with opendustrial ---- ##
+require 'export.rb'
 
 FakeCompInfo = Struct.new(:volume, :mass, :area, :material, :thumb, :comp_id)
 
@@ -429,18 +430,30 @@ class ProjectServer
     return unless pr
     comps = pr.all_parts + pr.all_assemblies
     c = comps.find{|e| e.component_id.to_s == c_info.comp_id }
-    if c
-      c_info.area = c.area
-      if c.class == Assembly
-        c_info.volume, c_info.mass, dummy = 1,2,3#c.volume_mass_and_cog
-        #c_info.thumb = $manager.glview.image_of_parts( c.contained_parts )
-      else
-        c_info.volume, dummy = 1,2 #c.volume_and_cog
-        c_info.mass = 3 #c.mass info.volume.to_f
-        c_info.material = c.information[:material].name
-        #c_info.thumb = $manager.glview.image_of_parts [c]
+    return unless c
+    c_info.area = 1#c.area
+    if c.class == Assembly
+      c_info.volume, c_info.mass, dummy = 1,2,3#c.volume_mass_and_cog
+      #c_info.thumb = $manager.glview.image_of_parts( c.contained_parts )
+    else
+      c_info.volume, dummy = 1,2 #c.volume_and_cog
+      c_info.mass = 3 #c.mass info.volume.to_f
+      c_info.material = c.information[:material].name
+      File::open( "../../../public/projects/#{pr_name.downcase}.smp" ) do |file|
+        thumb, dummy = Marshal::restore file #$manager.glview.image_of_parts [c]
+        thumb.save( "../../../public/images/generated/#{pr_name.downcase}.png" )
       end
-      return c_info
     end
+    c_info
+  end
+  
+  def generate_stl( pr_name, comp_id )
+    pr = @projects.find{|p| p.name == pr_name } || load_project( pr_name )
+    return unless pr
+    comps = pr.all_parts + pr.all_assemblies
+    c = comps.find{|e| e.component_id.to_s == comp_id }
+    return unless c
+    stl = Exporter.new.generate_stl [c], false
+    File::open( "../../../public/downloads/#{pr_name.downcase}.stl", 'w' ){|f| f << stl }
   end
 end
