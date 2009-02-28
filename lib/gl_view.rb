@@ -7,6 +7,7 @@ require 'gtkglext'
 require 'matrix.rb'
 require 'image.rb'
 require 'tools.rb'
+require 'ui/component_browser.rb'
 
 class Point
   attr_accessor :x, :y
@@ -982,8 +983,8 @@ class GLView < Gtk::DrawingArea
     GL.End
   end
   
-  def image_of_parts parts
-    parts = [parts] unless parts.is_a? Array
+  def image_of_parts *parts
+    parts.flatten!
     # find an instance of each part for rendering
     temp = []
     instances = parts.map do |part|
