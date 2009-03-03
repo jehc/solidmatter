@@ -393,7 +393,7 @@ FakeCompInfo = Struct.new(:volume, :mass, :area, :material, :thumb, :comp_id)
 
 class ProjectServer
   def load_project name
-    Project.load "../../../public/projects/#{name.downcase}.smp"
+    Project.load "../../../public/project_base/#{name.downcase}.smp"
   rescue 
     nil
   end
@@ -404,7 +404,7 @@ class ProjectServer
     pr = @projects.last
     if name
       pr.name = name
-      pr.filename = "../../../public/projects/#{name.downcase}.smp"
+      pr.filename = "../../../public/project_base/#{name.downcase}.smp"
       pr.save 
     end
     nil
@@ -413,7 +413,7 @@ class ProjectServer
   alias rm_old remove_project
   def remove_project name
     rm_old name
-    File.delete "../../../public/projects/#{name.downcase}.smp"
+    File.delete "../../../public/project_base/#{name.downcase}.smp"
   end
   
   def find_components( pr_name, kwds )
@@ -439,7 +439,7 @@ class ProjectServer
       c_info.volume, dummy = 1,2 #c.volume_and_cog
       c_info.mass = 3 #c.mass info.volume.to_f
       c_info.material = c.information[:material].name
-      File::open( "../../../public/projects/#{pr_name.downcase}.smp" ) do |file|
+      File::open( "../../../public/project_base/#{pr_name.downcase}.smp" ) do |file|
         thumb, dummy = Marshal::restore file #$manager.glview.image_of_parts [c]
         thumb.save( "../../../public/images/generated/#{pr_name.downcase}.png" )
       end

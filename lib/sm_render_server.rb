@@ -197,27 +197,27 @@ class Dummy
   end
 end
  
-# # deletes all methods in a class
-# class Module
-#   def override
-#     meths = instance_methods - Object.new.methods
-#     for meth in meths
-#       class_eval "undef #{meth}"
-#     end
-#     class_eval "
-#       def initialize(*a)
-#       end
-#       def method_missing(m,*a)
-#         Dummy.new
-#       end
-#     "
-#   end
-# end
-#  
-# class ProgressDialog
-#   override
-# end
-#  
+# deletes all methods in a class
+class Module
+  def override
+    meths = instance_methods - Object.new.methods
+    for meth in meths
+      class_eval "undef #{meth}"
+    end
+    class_eval "
+      def initialize(*a)
+      end
+      def method_missing(m,*a)
+        Dummy.new
+      end
+    "
+  end
+end
+ 
+class ProgressDialog
+  override
+end
+ 
 # class OpView
 #   override
 # end
@@ -261,7 +261,7 @@ class Service
     puts "doing load"
     wait = true
     Gtk.queue do
-      $manager.open_file "../../../public/projects/#{pr_name.downcase}.smp"
+      $manager.open_file "../../../public/project_base/#{pr_name.downcase}.smp"
       wait = false
     end
     sleep 0.1 while wait
