@@ -3,7 +3,7 @@
 #  Created by Björn Breitgoff on 2008-02-07.
 #  Copyright (c) 2008. All rights reserved.
 
-require 'libglade2'
+#require 'libglade2'
 require 'gconf2'
 
 

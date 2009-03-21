@@ -163,7 +163,7 @@ class Project
           inst.real_component = real_comp
         else
           @all_parts.push inst.real_component
-          inst.displaylist = @glview.add_displaylist
+          inst.displaylist = $manager.glview.add_displaylist
           inst.build
         end
       # add assembly
@@ -185,7 +185,7 @@ class Project
     elsif inst.is_a? Segment and $manager.work_sketch
       $manager.work_sketch.segments.push inst
       $manager.work_sketch.build_displaylist
-      @glview.rebuild_selection_pass_colors :select_segments_and_dimensions
+      $manager.glview.rebuild_selection_pass_colors :select_segments_and_dimensions
     end
     $manager.glview.redraw
   end

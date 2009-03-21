@@ -12,10 +12,9 @@ require 'project.rb'
 require 'vector.rb'
 require 'gl_view.rb'
 require 'geometry.rb'
+require 'export.rb'
 require 'gtk_threadsafe.rb'
 require 'preferences.rb'
-
-$preferences[:render_server_port] ||= 5000
 
 
 class Manager
@@ -241,6 +240,7 @@ class RenderWin < Gtk::Window
   end
 end
 
+FakeCompInfo = Struct.new(:volume, :mass, :area, :material, :thumb, :comp_id)
 
 class Service
   def initialize
@@ -249,16 +249,18 @@ class Service
   end
   
   def start
-    DRb.start_service( "druby://:#{$preferences[:render_server_port]}", self )
+    DRb.start_service( "druby://:#{ARGV[0]||5000}", self )
   end
   
   def stop
     DRb.stop_service
+    Gtk.main_quit
     nil
   end
   
   def load pr_name
-    puts "doing load"
+    puts "doing loading project #{pr_name}"
+    @pr_name = pr_name
     wait = true
     Gtk.queue do
       $manager.open_file "../../../public/project_base/#{pr_name.downcase}.smp"
@@ -275,12 +277,50 @@ class Service
       comp = comps.find{|c| c.component_id == comp_id.to_i }
       raise unless comp
       $manager.glview.redraw
-      im = $manager.glview.image_of_parts comp#.real_component
+      im = $manager.glview.image_of_parts( comp.class == Assembly ? comp.contained_parts : comp ) #.real_component
       im.save "../../../public/images/generated/#{comp_id}.png"
       wait = false
     end
     sleep 0.1 while wait
     nil
+  end
+  
+  def find_components kwds
+    pr = $manager.project
+    comps = pr.all_parts + pr.all_assemblies
+    comps.select{|c| kwds.all?{|kwd| /#{kwd}/i =~ c.information[:name] } }.map do |c|
+      [c.component_id.to_s, c.information[:name], c.information[:author]]
+    end
+  end
+  
+  def calculate_physical_data c_info
+    pr = $manager.project
+    comps = pr.all_parts + pr.all_assemblies
+    c = comps.find{|e| e.component_id.to_s == c_info.comp_id }
+    return unless c
+    c_info.area = 1#c.area
+    if c.class == Assembly
+      c_info.volume, c_info.mass, dummy = 1,2,3#c.volume_mass_and_cog
+      #c_info.thumb = $manager.glview.image_of_parts( c.contained_parts )
+    else
+      c_info.volume, dummy = 1,2 #c.volume_and_cog
+      c_info.mass = 3 #c.mass info.volume.to_f
+      c_info.material = c.information[:material].name
+      File::open( "../../../public/project_base/#{@pr_name.downcase}.smp" ) do |file|
+        thumb, dummy = Marshal::restore file #$manager.glview.image_of_parts [c]
+        thumb.save( "../../../public/images/generated/#{@pr_name.downcase}.png" )
+      end
+    end
+    c_info
+  end
+  
+  def generate_stl comp_id
+    pr = $manager.project
+    comps = pr.all_parts + pr.all_assemblies
+    c = comps.find{|e| e.component_id.to_s == comp_id }
+    return unless c
+    stl = Exporter.new.generate_stl [c], false
+    File::open( "../../../public/downloads/#{@pr_name.downcase}.stl", 'w' ){|f| f << stl }
   end
 end
 
@@ -292,6 +332,8 @@ Thread.abort_on_exception = true
 Gtk.init
 Gtk::GL.init
 Service.new.start
+puts "Render node ready"
+$stdout.flush
 Gtk.main_with_queue 100
 
 
