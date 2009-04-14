@@ -240,6 +240,8 @@ class RenderWin < Gtk::Window
   end
 end
 
+$preferences[:thumb_res] = 150
+$preferences[:screenshot_step] = 4
 FakeCompInfo = Struct.new(:volume, :mass, :area, :material, :thumb, :comp_id)
 
 class Service
@@ -277,8 +279,8 @@ class Service
       comp = comps.find{|c| c.component_id == comp_id.to_i }
       raise unless comp
       $manager.glview.redraw
-      im = $manager.glview.image_of_parts( comp.class == Assembly ? comp.contained_parts : comp ) #.real_component
-      im.save "../../../public/images/generated/#{comp_id}.png"
+      im = $manager.glview.image_of_parts( comp.class == Assembly ? comp.contained_parts : comp )
+      im.save "../../../public/project_base/#{@pr_name.downcase}/images/#{comp_id}.png"
       wait = false
     end
     sleep 0.1 while wait
@@ -291,6 +293,14 @@ class Service
     comps.select{|c| kwds.all?{|kwd| /#{kwd}/i =~ c.information[:name] } }.map do |c|
       [c.component_id.to_s, c.information[:name], c.information[:author]]
     end
+  end
+  
+  def all_parts
+    $manager.project.all_parts.map{|c| [c.component_id.to_s, c.information[:name], c.information[:author]] }
+  end
+  
+  def all_assemblies
+    $manager.project.all_assemblies.map{|c| [c.component_id.to_s, c.information[:name], c.information[:author]] }
   end
   
   def calculate_physical_data c_info
@@ -308,7 +318,7 @@ class Service
       c_info.material = c.information[:material].name
       File::open( "../../../public/project_base/#{@pr_name.downcase}.smp" ) do |file|
         thumb, dummy = Marshal::restore file #$manager.glview.image_of_parts [c]
-        thumb.save( "../../../public/images/generated/#{@pr_name.downcase}.png" )
+        #thumb.save( "../../../public/images/generated/#{@pr_name.downcase}.png" )
       end
     end
     c_info

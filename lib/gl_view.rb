@@ -997,7 +997,7 @@ class GLView < Gtk::DrawingArea
         temp_inst
       end
     end
-    im = image_of_instances instances
+    im = image_of_instances instances, $preferences[:screenshot_step]
     temp.each{|t| $manager.delete_object t }
     redraw
     return im
