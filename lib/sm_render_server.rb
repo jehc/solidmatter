@@ -273,17 +273,18 @@ class Service
   end
   
   def render_component comp_id
-    wait = true
-    Gtk.queue do
-      comps = $manager.project.all_parts + $manager.project.all_assemblies
-      comp = comps.find{|c| c.component_id == comp_id.to_i }
-      raise unless comp
-      $manager.glview.redraw
-      im = $manager.glview.image_of_parts( comp.class == Assembly ? comp.contained_parts : comp )
-      im.save "../../../public/project_base/#{@pr_name.downcase}/images/#{comp_id}.png"
-      wait = false
-    end
-    sleep 0.1 while wait
+      wait = true
+      Gtk.queue do
+        comps = $manager.project.all_parts + $manager.project.all_assemblies
+        comp = comps.find{|c| c.component_id == comp_id.to_i }
+        if comp
+          $manager.glview.redraw
+          im = $manager.glview.image_of_parts( comp.class == Assembly ? comp.contained_parts : comp )
+          im.save "../../../public/project_base/#{@pr_name.downcase}/images/#{comp_id}.png"
+        end
+        wait = false
+      end
+      sleep 0.1 while wait
     nil
   end
   
