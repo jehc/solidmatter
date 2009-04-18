@@ -7,7 +7,7 @@ require 'pop_ups.rb'
 
 
 class Tool
-  attr_reader :toolbar, :uses_toolbar
+  attr_reader :toolbar, :uses_toolbar, :no_depth
   def initialize status_text
     @status_text = status_text
     @glview = $manager.glview
@@ -415,6 +415,44 @@ class FaceSelectionTool < SelectionTool
     GL.Enable(GL::POLYGON_OFFSET_FILL)
   end
 end
+
+
+class EdgeSelectionTool < SelectionTool
+  def initialize
+    super GetText._("Select edges:")
+    @no_depth = true
+  end
+  
+  def selection_mode
+    :select_edges
+  end
+  
+  def click_left( x,y )
+    super
+    mouse_move( x,y )
+    if @current_edge
+      @selection = @current_edge
+      $manager.cancel_current_tool
+    end
+  end
+  
+  def mouse_move( x,y )
+    super
+    @current_edge = @glview.select( x,y, selection_mode )
+    @glview.redraw
+  end
+  
+  def draw
+    super
+    GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
+    @current_edge.draw if @current_edge
+  end
+  
+  def resume
+    super
+  end
+end
+
 
 ###                                                                  ###
 ######---------------------- Standard tools ----------------------######

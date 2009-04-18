@@ -433,6 +433,8 @@ public
         tool = PlaneSelectionTool.new( &block )
       when 'face_select'
         tool = FaceSelectionTool.new( &block )
+      when 'edge_select'
+        tool = EdgeSelectionTool.new( &block )
       when 'measure_distance'
         tool = MeasureDistanceTool.new( &block )
       when 'line'

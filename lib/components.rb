@@ -435,7 +435,7 @@ class Component
 end
 
 class Part < Component
-  attr_accessor :displaylist, :wire_displaylist, :selection_displaylist, :history_limit, :solid, :information, :cog
+  attr_accessor :displaylist, :wire_displaylist, :selection_displaylist, :wire_selection_displaylist, :history_limit, :solid, :information, :cog
   attr_reader :operators, :working_planes, :unused_sketches, :solid
   def initialize name
     super()
@@ -451,6 +451,7 @@ class Part < Component
     @displaylist = $manager.glview.add_displaylist
     @wire_displaylist = $manager.glview.add_displaylist
     @selection_displaylist = $manager.glview.add_displaylist
+    @wire_selection_displaylist = $manager.glview.add_displaylist
     @solid = Solid.new
   end
 
@@ -526,7 +527,7 @@ class Part < Component
 
   def build_displaylist
     # generate mesh and write to displaylist
-    GL.NewList( @displaylist, GL::COMPILE)
+    GL.NewList( @displaylist, GL::COMPILE )
       # draw shaded faces
       @solid.faces.each{|f| f.draw }
     GL.EndList
@@ -534,7 +535,7 @@ class Part < Component
   end
   
   def build_wire_displaylist
-    GL.NewList( @wire_displaylist, GL::COMPILE)
+    GL.NewList( @wire_displaylist, GL::COMPILE )
       all_segs = @solid.faces.map{|face| face.segments }.flatten
       GL.Disable(GL::LIGHTING)
       GL.LineWidth( 1.5 )
@@ -543,11 +544,24 @@ class Part < Component
   end
   
   def build_selection_displaylist
-    GL.NewList( @selection_displaylist, GL::COMPILE)
+    GL.NewList( @selection_displaylist, GL::COMPILE )
       @solid.faces.each do |face|
         c = face.selection_pass_color
         GL.Color3f( c[0],c[1],c[2] )
         face.draw
+      end
+    GL.EndList
+  end
+  
+  def build_wire_selection_displaylist
+    GL.NewList( @wire_selection_displaylist, GL::COMPILE )
+      all_segs = @solid.faces.map{|face| face.segments }.flatten
+      GL.Disable(GL::LIGHTING)
+      GL.LineWidth( 12.0 )
+      all_segs.each do |s|
+        c = s.selection_pass_color
+        GL.Color3f( c[0],c[1],c[2] )
+        s.draw
       end
     GL.EndList
   end

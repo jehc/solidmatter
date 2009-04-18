@@ -149,6 +149,9 @@ class SolidMatterMainWin < Gtk::Window
     select_button = Gtk::MenuToolButton.new( Gtk::Image.new( '../data/icons/middle/list-add_middle.png' ), GetText._('Select') )
     select_button.signal_connect("clicked"){|b| $manager.activate_tool 'select' }
     toolbar.append( select_button, GetText._("Choose selection mode") )
+    edge_button = Gtk::MenuToolButton.new( Gtk::Image.new( '../data/icons/middle/list-add_middle.png' ), GetText._('Select edges') )
+    edge_button.signal_connect("clicked"){|b| $manager.activate_tool 'edge_select' }
+    toolbar.append( edge_button, GetText._("Choose selection mode") )
     return_btn = toolbar.append( GetText._("Return"), GetText._("Work on parent assembly"),"Toolbar/Return", Gtk::Image.new('../data/icons/middle/edit-undo_middle.png') ){ $manager.working_level_up }
     return_btn.sensitive = false
     $manager.return_btn = return_btn

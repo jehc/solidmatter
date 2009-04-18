@@ -97,7 +97,7 @@ private
     # rotate
     m = Matrix4x4::euler_rotation( axis, angle)
     @position = ( m * @position.vec4 ).vec3!
-    # move target back to old position
+    # move camera back to old position
     @position += @target
   end
 end
@@ -634,7 +634,13 @@ class GLView < Gtk::DrawingArea
       $manager.work_component.dimensions.each{|dim| recurse_draw dim }
       # draw 3d interface stuff
       GL.Disable(GL::LIGHTING)
-      @immediate_draw_routines.each{|r| r.call } unless @selection_pass or @picking_pass
+      unless @selection_pass or @picking_pass
+        @immediate_draw_routines.each do |r|
+          glDisable(GL_DEPTH_TEST) if $manager.current_tool.no_depth
+          r.call
+          glEnable(GL_DEPTH_TEST)
+        end
+      end
       @ground.draw unless @selection_pass or @picking_pass
   end
   
@@ -687,7 +693,13 @@ class GLView < Gtk::DrawingArea
         GL.Translate( top_comp.position.x, top_comp.position.y, top_comp.position.z )
         if @selection_pass
           GL.Disable GL::LIGHTING
-          GL.CallList top_comp.selection_displaylist unless $manager.work_sketch
+          unless $manager.work_sketch
+            if $manager.current_tool.selection_mode == :select_edges
+              GL.CallList top_comp.wire_selection_displaylist
+            else
+              GL.CallList top_comp.selection_displaylist
+            end
+          end
         else
           draw_part top_comp
         end
@@ -781,16 +793,21 @@ class GLView < Gtk::DrawingArea
   
   def rebuild_selection_pass_colors type=nil
     if type or $manager.current_tool.is_a?(SelectionTool)
-      case type or $manager.current_tool.selection_mode
+      type ||= $manager.current_tool.selection_mode
+      visible_parts = $manager.project.all_part_instances.select{|inst| inst.visible }
+      case type
       when :select_faces
-        @selectables = $manager.project.all_part_instances.select{|inst| inst.visible }.map{|inst| inst.solid.faces }.flatten
+        @selectables = visible_parts.map{|inst| inst.solid.faces }.flatten
+      when :select_edges
+        @selectables = visible_parts.map{|inst| inst.solid.faces.map{|f| f.segments } }.flatten
+        visible_parts.map{|inst| inst.build_wire_selection_displaylist }
       when :select_planes
         @selectables = $manager.work_component.working_planes
       when :select_faces_and_planes
         @selectables = $manager.work_component.working_planes.dup
-        @selectables += $manager.project.all_part_instances.select{|inst| inst.visible }.map{|inst| inst.solid.faces }.flatten
+        @selectables += visible_parts.map{|inst| inst.solid.faces }.flatten
       when :select_instances
-        @selectables = $manager.project.all_part_instances.select{|inst| inst.visible }
+        @selectables = visible_parts
       when :select_segments
         if $manager.work_sketch
           @selectables = $manager.work_sketch.segments
@@ -803,7 +820,7 @@ class GLView < Gtk::DrawingArea
         @selectables = $manager.work_sketch.segments.dup
         @selectables += $manager.work_component.dimensions
       when :select_faces_and_dimensions
-        @selectables = $manager.project.all_part_instances.select{|inst| inst.visible }.map{|inst| inst.solid.faces }.flatten
+        @selectables = visible_parts.map{|inst| inst.solid.faces }.flatten
         @selectables += $manager.work_component.dimensions
       end
       # create colors to represent selectable objects
@@ -824,6 +841,7 @@ class GLView < Gtk::DrawingArea
         i == 2 ? i = 0 : i += 1 
       end
       parts_to_build.uniq.each{|p| p.build_selection_displaylist }
+      visible_parts.map{|inst| inst.build_wire_selection_displaylist } if type == :select_edges
     end
   end
   
@@ -1050,11 +1068,6 @@ class GLView < Gtk::DrawingArea
     return im
   end
 end
-
-
-
-
-
 
 
 
