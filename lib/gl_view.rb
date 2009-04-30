@@ -124,7 +124,8 @@ class GroundPlane
   end
   
   def generate_shadowmap dialog=false
-    objects=$manager.project.all_part_instances.select{|p| p.visible }
+    objects = $manager.project.all_part_instances.select{|p| p.visible }
+    solids = objects.map{|p| p.solid.dup } # need to copy solids for thread safety
     GC.enable
     @g_plane, @g_width, @g_height, @g_depth = ground objects
     @objects = objects
@@ -147,8 +148,8 @@ class GroundPlane
           break if cancel
           pix = Pixel.new
           pix_finished = false
-          for o in objects
-            for face in o.solid.faces.select{|f| f.is_a? PlanarFace } #XXX should work with all facetypes
+          for s in solids
+            for face in s.faces.select{|f| f.is_a? PlanarFace } #XXX should work with all facetypes
               face_dist = 0.0
               planar_loop = face.segments.map do |seg|
                 #s = seg.dup
@@ -189,7 +190,7 @@ class GroundPlane
         load_texture( map, @tex )
       end
       progress.close if dialog
-      $manager.glview.redraw
+      Gtk.queue{ $manager.glview.redraw }
     end
   end
   
