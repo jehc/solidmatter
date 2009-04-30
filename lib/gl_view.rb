@@ -123,21 +123,27 @@ class GroundPlane
     clean_up
   end
   
-  def generate_shadowmap objects=$manager.project.all_part_instances.select{|p| p.visible }
+  def generate_shadowmap dialog=false
+    objects=$manager.project.all_part_instances.select{|p| p.visible }
     GC.enable
     @g_plane, @g_width, @g_height, @g_depth = ground objects
     @objects = objects
     if @g_plane and $manager.glview.render_shadows
       cancel = false
-      progress = ProgressDialog.new( GetText._("<b>Rendering shadowmap...</b>") ){ cancel = true }
-      progress.fraction = 0.0
-      increment = 1.0 / @res_x 
+      if dialog
+        progress = ProgressDialog.new( GetText._("<b>Rendering shadowmap...</b>") ){ cancel = true }
+        progress.fraction = 0.0
+        increment = 1.0 / @res_x 
+      end
       map = Image.new @res_x, @res_y
       for x in 0...@res_x
         break if cancel
-        progress.fraction += increment
-        progress.text = GetText._("Processing scanline ") + "#{x}/#{@res_x}"
+        if dialog
+          progress.fraction += increment
+          progress.text = GetText._("Processing scanline ") + "#{x}/#{@res_x}"
+        end
         for y in 0...@res_y
+          sleep 0.005 unless dialog # because gtk freezes otherwise
           break if cancel
           pix = Pixel.new
           pix_finished = false
@@ -182,7 +188,7 @@ class GroundPlane
         end
         load_texture( map, @tex )
       end
-      progress.close
+      progress.close if dialog
       $manager.glview.redraw
     end
   end
@@ -267,7 +273,7 @@ end
 
 
 class GLView < Gtk::DrawingArea
-  attr_accessor :num_callists, :immediate_draw_routines, :selection_color
+  attr_accessor :num_callists, :immediate_draw_routines, :selection_color, :shadow_fresh
   attr_reader :displaymode, :ground, :cameras, :current_cam_index, :render_shadows, :stereo
   def initialize
     super
@@ -590,7 +596,17 @@ class GLView < Gtk::DrawingArea
   
   def render_shadows= b
     @render_shadows = b
-    @ground.generate_shadowmap
+    #@ground.generate_shadowmap true
+    $manager.set_status_text GetText._("Rendering shadowmap...")
+    Thread.start do
+      while @render_shadows
+        if not @shadow_fresh
+          @shadow_fresh = true
+          @ground.generate_shadowmap 
+        end
+        sleep 0.5
+      end
+    end
     redraw
   end
   
