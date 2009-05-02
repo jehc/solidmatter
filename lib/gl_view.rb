@@ -125,7 +125,7 @@ class GroundPlane
   
   def generate_shadowmap dialog=false
     objects = $manager.project.all_part_instances.select{|p| p.visible }
-    solids = objects.map{|p| p.solid.dup } # need to copy solids for thread safety
+    solids = objects.map{|p| Marshal::load(Marshal.dump(p.solid)) } # need to copy solids for thread safety
     GC.enable
     @g_plane, @g_width, @g_height, @g_depth = ground objects
     @objects = objects
