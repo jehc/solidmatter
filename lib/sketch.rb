@@ -342,7 +342,10 @@ end
 class SketchConstraint
   include Selectable
   attr_accessor :selection_pass, :visible
-  def initialize temp=false
+  @@tex = nil
+  
+  def initialize(sketch, temp=false)
+    @sketch = sketch
     constrained_objects.each{|o| o.constraints << self } unless temp # if only used for drawing
   end
   
@@ -361,13 +364,53 @@ class SketchConstraint
   def update immutable_objs
     raise OverconstrainedException.new(self) if constrained_objects.all?{|p| immutable_objs.include? p } and not satisfied
   end
+  
+  def setup_texture filename
+    unless @@tex
+      @@tex ||= GL.GenTextures(1)[0]
+      GL.BindTexture( GL::TEXTURE_2D, @@tex )
+      GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL_LINEAR )
+      GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL_LINEAR )
+      GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_WRAP_S, GL::CLAMP )
+      GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_WRAP_T, GL::CLAMP )
+      map = Image.new filename
+      load_texture( map, @@tex )
+    end
+  end
+  
+  def draw
+    if @@tex and @tex_pos
+      GL.BindTexture( GL::TEXTURE_2D, @@tex )
+      GL.TexEnvf( GL::TEXTURE_ENV, GL::TEXTURE_ENV_MODE, GL::REPLACE )
+      GL.Enable( GL::TEXTURE_2D )
+      GL.Disable( GL::LIGHTING )
+      w = 0.03
+      d = 0.03
+      pos = Tool.sketch2world( @tex_pos, @sketch.plane )
+      GL.Begin( GL::QUADS )
+        glTexCoord2f(1.0, 0.0)
+        GL.Vertex( pos.x - w, pos.y, pos.z + d )
+        glTexCoord2f(1.0, 1.0)
+        GL.Vertex( pos.x + w, pos.y, pos.z + d )
+        glTexCoord2f(0.0, 1.0)
+        GL.Vertex( pos.x + w, pos.y, pos.z - d )
+        glTexCoord2f(0.0, 0.0)
+        GL.Vertex( pos.x - w, pos.y, pos.z - d )
+      GL.End
+      GL.Disable( GL::TEXTURE_2D )
+    end
+  end
+  
+  def clean_up
+    #XXX delete GLTexture
+  end
 end
 
 class CoincidentConstraint < SketchConstraint
-  def initialize( p1, p2 )
+  def initialize( sketch, p1, p2 )
     @p1 = p1
     @p2 = p2
-    super()
+    super sketch
   end
   
   def constrained_objects
@@ -397,10 +440,16 @@ class CoincidentConstraint < SketchConstraint
 end
 
 class HorizontalConstraint < SketchConstraint
-  def initialize( p1, p2 )
-    @p1 = p1
-    @p2 = p2
-    super()
+  def initialize( sketch, p1_or_line, p2=nil )
+    if p2
+      @p1 = p1
+      @p2 = p2
+    else
+      @p1 = p1_or_line.pos1
+      @p2 = p1_or_line.pos2
+    end
+    setup_texture '../data/icons/small/horizontal.png'
+    super sketch
   end
   
   def constrained_objects
@@ -427,13 +476,24 @@ class HorizontalConstraint < SketchConstraint
       return true
     end
   end
+  
+  def draw
+    @tex_pos = (@p1 + @p2)/2.0 - Vector[0,0,0.015]
+    super
+  end
 end
 
 class VerticalConstraint < SketchConstraint
-  def initialize( p1, p2 )
-    @p1 = p1
-    @p2 = p2
-    super()
+  def initialize( sketch, p1_or_line, p2=nil )
+    if p2
+      @p1 = p1
+      @p2 = p2
+    else
+      @p1 = p1_or_line.pos1
+      @p2 = p1_or_line.pos2
+    end
+    setup_texture '../data/icons/small/vertical.png'
+    super sketch
   end
   
   def constrained_objects
@@ -460,6 +520,11 @@ class VerticalConstraint < SketchConstraint
       return true
     end
   end
+  
+  def draw
+    @tex_pos = (@p1 + @p2) / 2.0
+    super
+  end
 end
 
 class Dimension < SketchConstraint
@@ -485,11 +550,6 @@ class Dimension < SketchConstraint
     GL.PopMatrix
   end
   
-  def initialize( sketch, temp = false )
-    @sketch = sketch
-    super(temp)
-  end
-  
   def value
     raise "Dimension #{self} cannot report its value"
   end
@@ -502,6 +562,7 @@ class Dimension < SketchConstraint
   end
   
   def draw
+    super
     c = @selection_pass ? @selection_pass_color : [0.85, 0.5, 0.99]
     GL.Color3f( *c )
     GL.LineWidth( @selection_pass ? 6.0 : 3.0 )

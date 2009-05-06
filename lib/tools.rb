@@ -777,8 +777,8 @@ class LineTool < SketchTool
     if @temp_line
       unless @temp_line.pos1 == @temp_line.pos2
         snap_p, snapped = point_snapped( world2sketch( @glview.screen2world(x,y)))
-        @sketch.constraints << CoincidentConstraint.new( @temp_line.pos2, snap_p ) if snapped
-        @sketch.constraints << CoincidentConstraint.new( @temp_line.pos1, @sketch.segments.last.pos2 ) unless @first_line
+        @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos2, snap_p ) if snapped
+        @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos1, @sketch.segments.last.pos2 ) unless @first_line
         @sketch.segments << @temp_line
         @first_line = false
         @sketch.build_displaylist
@@ -1023,6 +1023,64 @@ class DimensionTool < SketchTool
   def draw
     super
     @temp_dim.draw if @temp_dim
+  end
+end
+
+
+class ConstrainTool < SketchTool
+  def initialize sketch
+    super( GetText._("Choose one or more segments to constrain:"), sketch )
+    @selected_segments = []
+    @does_snap = false
+    @no_depth = true
+  end
+  
+  def click_left( x,y )
+    @chooser.destroy if @chooser and not @chooser.destroyed?
+    # use point instead of segment if we find one near
+    p, was_snapped = point_snapped( world2sketch(@glview.screen2world(x,y)) )
+    hit_something = false
+    if was_snapped
+      @selected_segments << p
+      hit_something = true
+    else
+      seg = @glview.select(x,y)
+      if seg
+        @selected_segments << seg
+        hit_something = true
+      end
+    end
+    @selected_segments = [] unless hit_something
+    @selected_segments.shift if @selected_segments.size == 3
+    unless @selected_segments.empty?
+      @chooser = SketchConstraintChooser.new( x,y, @selected_segments ) do |type| 
+        c = case type
+        when :horizontal
+          HorizontalConstraint.new( @sketch, *@selected_segments )
+        when :vertical
+          VerticalConstraint.new( @sketch, *@selected_segments )
+        end
+        c.visible = true
+        @sketch.constraints << c
+        @sketch.update_constraints [@selected_segments.first.pos1]
+        @sketch.build_displaylist
+        @selected_segments = []
+        @glview.redraw
+      end
+    end 
+    super
+  end
+  
+  def draw
+    super
+    GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
+    GL.LineWidth(12)
+    @selected_segments.each{|s| s.draw }
+  end
+  
+  def exit
+    super
+    @chooser.destroy if @chooser and not @chooser.destroyed?
   end
 end
 

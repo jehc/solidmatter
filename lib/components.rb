@@ -592,10 +592,6 @@ class Part < Component
     @cog = vc.last if vc
   end
   
-  def dimensions
-    (all_sketches.map{|sk| sk.dimensions } + @operators.map{|op| op.dimensions }).flatten.uniq
-  end
-  
   def clean_up
     $manager.glview.delete_displaylist @displaylist
     $manager.glview.delete_displaylist @wire_displaylist
@@ -609,7 +605,14 @@ class Part < Component
     (@unused_sketches + @operators.map{|op| op.settings[:sketch] }).compact
   end
   
-
+  def dimensions
+    (all_sketches.map{|sk| sk.dimensions } + @operators.map{|op| op.dimensions }).flatten.uniq
+  end
+  
+  def constraints
+    all_sketches.map{|sk| sk.constraints }.flatten
+  end
+  
   def dup
     copy = super
     copy.unused_sketches = @unused_sketches.dup
@@ -622,6 +625,7 @@ class Part < Component
     @selection_displaylist = $manager.glview.add_displaylist
   end
 end
+
 
 class Assembly < Component
   attr_accessor :components, :cog
@@ -709,6 +713,10 @@ class Assembly < Component
   
   def dimensions
     @components.map{|c| c.dimensions }.flatten
+  end
+  
+  def constraints
+    @components.map{|c| c.constraints }.flatten
   end
 end
 

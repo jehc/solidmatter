@@ -303,6 +303,7 @@ public
       @selection.deselect_all
       return true
     elsif @work_operator
+      @work_operator.settings[:sketch].visible = false
       @main_vbox.remove( @op_toolbar )
       @op_toolbar = nil
       @work_operator = nil
@@ -333,8 +334,8 @@ public
     sketch.parent.cog = nil
     sketch.plane.visible = true
     sketch.plane.animate
-    sketch.visible = true
     activate_tool 'select'
+    sketch.visible = true
   end
   
   def operator_mode op
@@ -447,6 +448,8 @@ public
         tool = SplineTool.new( @work_sketch, &block )
       when 'dimension'
         tool = DimensionTool.new( @work_sketch, &block )
+      when 'constrain'
+        tool = ConstrainTool.new( @work_sketch, &block )
       when 'trim'
         tool = TrimTool.new( @work_sketch, &block )
     end

@@ -648,7 +648,8 @@ class GLView < Gtk::DrawingArea
       draw_coordinate_axes unless @do_not_swap
       GL.LineStipple(5, 0x1C47)
       recurse_draw $manager.project.main_assembly
-      $manager.work_component.dimensions.each{|dim| recurse_draw dim }
+      wc = $manager.work_component
+      wc.dimensions.each{|c| recurse_draw c }
       # draw 3d interface stuff
       GL.Disable(GL::LIGHTING)
       unless @selection_pass or @picking_pass
@@ -659,6 +660,7 @@ class GLView < Gtk::DrawingArea
         end
       end
       @ground.draw unless @selection_pass or @picking_pass
+      (wc.constraints - wc.dimensions).each{|c| recurse_draw c if c.visible }
   end
   
   def draw_part p
@@ -674,6 +676,7 @@ class GLView < Gtk::DrawingArea
         unless @displaymode == :hidden_lines
           if p.information[:material].reflectivity > 0
             GL.BindTexture( GL::TEXTURE_2D, @spheremap )
+            GL.TexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
             glEnable(GL_TEXTURE_GEN_S)
             glEnable(GL_TEXTURE_GEN_T)
             glEnable(GL_TEXTURE_2D)
@@ -751,8 +754,8 @@ class GLView < Gtk::DrawingArea
         GL.Disable(GL::POLYGON_OFFSET_FILL)
         GL.CallList( (@picking_pass or @selection_pass == :select_planes or @selection_pass == :select_faces_and_planes) ? top_comp.pick_displaylist : top_comp.displaylist )
         GL.Enable(GL::POLYGON_OFFSET_FILL)
-      ### ---------------------- Dimension ---------------------- ###
-      elsif top_comp.is_a? Dimension
+      ### ---------------------- Sketch constraint ---------------------- ###
+      elsif top_comp.is_a? SketchConstraint
         top_comp.selection_pass = true if @selection_pass
         top_comp.draw
         top_comp.selection_pass = false

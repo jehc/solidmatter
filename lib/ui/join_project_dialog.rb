@@ -128,7 +128,7 @@ class JoinProjectDialog
   end
   
   def update_combo
-    @glade['bookmark_combo'].model.clear
+    #@glade['bookmark_combo'].model.clear
     for bm in $preferences[:bookmarks]
       @glade['bookmark_combo'].append_text bm.adress
     end

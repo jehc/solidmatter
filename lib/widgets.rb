@@ -141,8 +141,8 @@ class MeasureEntry < Gtk::VBox
 end
 
 
-class FloatingEntry < Gtk::Window
-  def initialize( x,y, value )
+class FloatingWidget < Gtk::Window
+  def initialize( x,y, *args, &b )
     super()
     # set style
     #self.modal = true
@@ -151,28 +151,7 @@ class FloatingEntry < Gtk::Window
     self.decorated = false
     self.skip_taskbar_hint = true
     self.skip_pager_hint = true
-    # create widgets
-    main_box = Gtk::HBox.new false
-    add main_box
-    entry = MeasureEntry.new
-    entry.value = value
-    main_box.add entry
-    ok_btn = Gtk::Button.new 
-    ok_btn.image = Gtk::Image.new(Gtk::Stock::APPLY, Gtk::IconSize::MENU)
-    ok_btn.relief = Gtk::RELIEF_NONE
-    main_box.add ok_btn
-    cancel_btn = Gtk::Button.new
-    cancel_btn.image = Gtk::Image.new(Gtk::Stock::CLOSE, Gtk::IconSize::MENU)
-    cancel_btn.relief = Gtk::RELIEF_NONE
-    main_box.add cancel_btn
-    # set ok button to react to pressing enter
-    ok_btn.can_default = true
-    ok_btn.has_default = true
-    self.default = ok_btn
-    # connect actions
-    ok_btn.signal_connect('clicked'){ yield entry.value if block_given? ; destroy }
-    cancel_btn.signal_connect('clicked'){ yield value ; destroy }
-    entry.on_change_value{ yield entry.value if block_given? }
+    setup_ui *args, &b
     # position right next to cursor
     x,y = convert2screen( x,y )
     move( x,y )
@@ -189,7 +168,60 @@ class FloatingEntry < Gtk::Window
     y_offset = win.allocation.height - glv.parent.allocation.height
     return $manager.main_win.position.first + x + x_offset, $manager.main_win.position.last + y + y_offset
   end
+  
+  def setup_ui
+    raise "ERROR: Widget cannot draw itself"
+  end
 end
+
+class FloatingEntry < FloatingWidget
+  def setup_ui value
+    main_box = Gtk::HBox.new false
+    add main_box
+    
+    entry = MeasureEntry.new
+    entry.value = value
+    main_box.add entry
+    
+    ok_btn = Gtk::Button.new 
+    ok_btn.image = Gtk::Image.new(Gtk::Stock::APPLY, Gtk::IconSize::MENU)
+    ok_btn.relief = Gtk::RELIEF_NONE
+    main_box.add ok_btn
+    
+    cancel_btn = Gtk::Button.new
+    cancel_btn.image = Gtk::Image.new(Gtk::Stock::CLOSE, Gtk::IconSize::MENU)
+    cancel_btn.relief = Gtk::RELIEF_NONE
+    main_box.add cancel_btn
+    
+    # set ok button to react to pressing enter
+    ok_btn.can_default = true
+    ok_btn.has_default = true
+    self.default = ok_btn
+    # connect actions
+    ok_btn.signal_connect('clicked'){ yield entry.value if block_given? ; destroy }
+    cancel_btn.signal_connect('clicked'){ yield value ; destroy }
+    entry.on_change_value{ yield entry.value if block_given? }
+  end
+end
+
+class SketchConstraintChooser < FloatingWidget
+  def setup_ui segments
+    main_box = Gtk::HBox.new false
+    add main_box
+    s1, s2 = segments[0], segments[1]
+    if s1.is_a? Line and not s2
+      btn = Gtk::Button.new 
+      btn.image = Gtk::Image.new('../data/icons/small/horizontal.png')
+      btn.signal_connect('clicked'){ yield :horizontal }
+      main_box.add btn
+      btn = Gtk::Button.new 
+      btn.image = Gtk::Image.new('../data/icons/small/vertical.png')
+      btn.signal_connect('clicked'){ yield :vertical }
+      main_box.add btn
+    end
+  end
+end
+
 
 
 

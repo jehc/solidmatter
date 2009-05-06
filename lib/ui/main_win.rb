@@ -21,7 +21,7 @@ require 'ui/render_dialog.rb'
 class SolidMatterMainWin < Gtk::Window
   def initialize
     super
-    Gtk::Window.set_default_icon_list [Gdk::Pixbuf.new('../data/icons/small/preferences-system_small.png'), Gdk::Pixbuf.new('../data/icons/big/tools.png')]
+    Gtk::Window.set_default_icon_list [Gdk::Pixbuf.new('../data/icons/small/logo.png'), Gdk::Pixbuf.new('../data/icons/big/logo.png')]
     self.reallocate_redraws = true
     self.window_position = Gtk::Window::POS_CENTER
     op_view = OpView.new
@@ -201,7 +201,7 @@ class SolidMatterMainWin < Gtk::Window
     # pack in OpView
     vbox = Gtk::VBox.new
     vbox.pack_start op_view
-    op_view.set_size_request(200,500)
+    op_view.set_size_request(200,600)
     # ... with controls
     up_btn = Gtk::Button.new
     up_btn.image = Gtk::Image.new '../data/icons/small/up_small.png'
@@ -288,7 +288,7 @@ class SolidMatterMainWin < Gtk::Window
     sketch_toolbar.append( GetText._("Polygon"), "Create regular convex polygon with variable number of segments", "SketchToolbar/Polygon", Gtk::Image.new('../data/icons/big/polygon.png') ){}
     sketch_toolbar.append( Gtk::SeparatorToolItem.new )
     sketch_toolbar.append( GetText._("Dimension"), "Add dimensions to the sketch", "SketchToolbar/Dimension", Gtk::Image.new('../data/icons/big/list-remove.png') ){ $manager.activate_tool('dimension', true) }
-    sketch_toolbar.append( GetText._("Constrain"), "Constrain the sketch", "SketchToolbar/Constrain", Gtk::Image.new('../data/icons/big/constrain.png') ){}
+    sketch_toolbar.append( GetText._("Constrain"), "Constrain the sketch", "SketchToolbar/Constrain", Gtk::Image.new('../data/icons/big/constrain.png') ){ $manager.activate_tool('constrain', true) }
     sketch_toolbar.append( Gtk::SeparatorToolItem.new )
     sketch_toolbar.append( GetText._("Trim"), "Cut away parts of a segment", "SketchToolbar/Trim", Gtk::Image.new('../data/icons/big/trim.png') ){ $manager.activate_tool('trim', true) }
     sketch_toolbar.append( Gtk::SeparatorToolItem.new )
