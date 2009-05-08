@@ -779,12 +779,13 @@ class LineTool < SketchTool
         snap_p, snapped = point_snapped( world2sketch( @glview.screen2world(x,y)))
         @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos2, snap_p ) if snapped
         @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos1, @sketch.segments.last.pos2 ) unless @first_line
+        @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos1, @last_point ) if @last_point_was_snapped and @first_line
         @sketch.segments << @temp_line
         @first_line = false
         @sketch.build_displaylist
       end
     end
-    @last_point, dummy = snapped( x,y )
+    @last_point, @last_point_was_snapped = snapped( x,y )
     @last_reference_points.push @last_point
   end
   
