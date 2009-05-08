@@ -162,6 +162,7 @@ class SketchToolMenu < Gtk::Menu
       Gtk::CheckMenuItem.new( GetText._("Snap to points")),
       Gtk::CheckMenuItem.new( GetText._("Snap to grid")),
       Gtk::CheckMenuItem.new( GetText._("Use guides")),
+      Gtk::CheckMenuItem.new( GetText._("Add constraints automatically")),
       Gtk::CheckMenuItem.new( GetText._("Create reference geometry")),
       Gtk::SeparatorMenuItem.new,
       Gtk::ImageMenuItem.new(Gtk::Stock::STOP)
@@ -169,7 +170,8 @@ class SketchToolMenu < Gtk::Menu
     items[0].active = $manager.point_snap
     items[1].active = $manager.grid_snap
     items[2].active = $manager.use_sketch_guides
-    items[3].active = tool.create_reference_geometry
+    items[3].active = $manager.use_auto_constrain
+    items[4].active = tool.create_reference_geometry
     # snap points
     items[0].signal_connect("activate") do |w|
       $manager.point_snap = w.active?
@@ -182,12 +184,16 @@ class SketchToolMenu < Gtk::Menu
     items[2].signal_connect("activate") do |w|
       $manager.use_sketch_guides = w.active?
     end
-    # reference
+    # constraints
     items[3].signal_connect("activate") do |w|
+      $manager.use_auto_constrain = w.active?
+    end
+    # reference
+    items[4].signal_connect("activate") do |w|
       tool.create_reference_geometry = w.active?
     end
     # stop
-    items[5].signal_connect("activate") do |w|
+    items[6].signal_connect("activate") do |w|
       $manager.cancel_current_tool
     end
     items.each{|i| append i }

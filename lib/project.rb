@@ -234,6 +234,10 @@ class Project
       obj.clean_up  
     elsif obj.is_a? Segment
       obj.sketch.segments.delete obj
+      obj.dynamic_points.map{|p| p.constraints }.flatten.each do |c|
+        c.constrained_objects.each{|o| o.constraints.delete c }
+        obj.sketch.constraints.delete c
+      end
       obj.sketch.build_displaylist
     end
     $manager.op_view.update

@@ -63,7 +63,7 @@ end
 
 class Manager
   attr_accessor :focus_view, :save_btn, :return_btn, :previous_btn, :next_btn, :clipboard,
-                :main_win, :point_snap, :grid_snap, :use_sketch_guides, :filename
+                :main_win, :point_snap, :grid_snap, :use_sketch_guides, :use_auto_constrain, :filename
   attr_reader :selection, :work_component, :work_sketch, :work_operator, :project,
               :glview, :render_view, :render_image, :op_view, :keys_pressed, :keymap, :has_been_changed
               
@@ -85,6 +85,7 @@ class Manager
     @point_snap = true
     @grid_snap = false
     @use_sketch_guides = false
+    @use_auto_constrain = true
     @keymap = { 65505 => :Shift,
                 65507 => :Ctrl,
                 65406 => :Alt,

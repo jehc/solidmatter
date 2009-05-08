@@ -781,6 +781,13 @@ class LineTool < SketchTool
         @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos1, @sketch.segments.last.pos2 ) unless @first_line
         @sketch.constraints << CoincidentConstraint.new( @sketch, @temp_line.pos1, @last_point ) if @last_point_was_snapped and @first_line
         @sketch.segments << @temp_line
+        if $manager.use_auto_constrain
+          if @temp_line.pos1.x == @temp_line.pos2.x
+            @sketch.constraints << VerticalConstraint.new( @sketch, @temp_line )
+          elsif @temp_line.pos1.z == @temp_line.pos2.z
+            @sketch.constraints << HorizontalConstraint.new( @sketch, @temp_line )
+          end
+        end
         @first_line = false
         @sketch.build_displaylist
       end
