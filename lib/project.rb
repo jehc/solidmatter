@@ -209,7 +209,7 @@ class Project
                                      GetText._("Delete Sketch?"))
         dia.add_buttons( [Gtk::Stock::NO, Gtk::Dialog::RESPONSE_NO],
                          [Gtk::Stock::DELETE, Gtk::Dialog::RESPONSE_YES] )
-        dia.secondary_text = GetText._("The operator includes an associated sketch.\nDo you want to delete it?")
+        dia.secondary_text = GetText._("The operator includes an associated sketch.\nDo you want to delete it as well?")
         dia.run do |resp|
           if resp == Gtk::Dialog::RESPONSE_YES
             @all_sketches.delete sketch

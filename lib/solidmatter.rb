@@ -4,7 +4,7 @@
 #  Copyright (c) 2008. All rights reserved.
 
 require 'rubygems'
-require 'ruby-prof'
+#require 'ruby-prof'
 require 'thread'
 require 'ui/main_win.rb'
 require 'preferences.rb'
@@ -31,14 +31,11 @@ Gtk.main_with_queue 100
 # vererbung von parts
 # use gtkuimanager for the menu
 # use gtkbuilder instead of libglade
-# extrusion toolbar wird nicht auf aktuellen depthwert gesetzt
 # op_view klappzustand speichern
 # direkt die iters manipulieren in server_win damit beim update scrollstand erhalten belibt
 # checken ob clean_up von workplane und sketch richtig erfolgt
 # sketch button sollte eingedrückt bleiben wenn plane gewählt wird
 # sicherheitsprüfungen im server ( is_valid(projectname, client_id) schreiben)
-# network code auf thread-safety mit Gtk prüfen
-# immer nach glDrawable fragen um redraw probleme zu vermeiden
 # nicht selektierbare objekte sollten wie der background wirken und bei click die selection aufheben
 # shortcuts über accelerators
 # when selecting regions, select inner regions first
@@ -48,13 +45,9 @@ Gtk.main_with_queue 100
 # refactor delete_op_view_selected code into delete_object
 # schnitte zwischen regions
 # click wird nicht richtig registriert in region select tool wenn zu langsam
-# polygon from chain should tesselate segments => dann RegionTool#init verändern und poly aus regionstruct nehmen
-# typechecking => Bekommen faces WorkingPlanes zugewiesen?
 # unterscheidung von instanzen bei selection unmöglich da beide die selbe displaylist haben
 # rebuild selectionpasscolors sollte für alle objekttypen farben erstellen, nur select sollte nach typ unterscheiden
-# linetool erstellt constraint nur für letzten punkt
 # menu selection should be shown in statusbar
 # wennn neues projekt mit part erstellt wird sollte danach auf part gewechselt werden
-# make server threadsafe
 # start avahi service directly from dbus
 # make constraining to COG possible

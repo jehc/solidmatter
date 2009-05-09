@@ -133,12 +133,12 @@ class PartSelectionTool < SelectionTool
   
   def click_left( x,y )
     super
-    sel = @glview.select(x,y)
-    if sel
+    mouse_move( x,y )
+    if @current_comp
       if $manager.key_pressed? :Shift
-        $manager.selection.add $manager.top_ancestor( sel ) 
+        $manager.selection.add @current_comp
       else
-        $manager.select sel
+        $manager.select @current_comp
       end
     else
       $manager.selection.deselect_all
@@ -157,7 +157,7 @@ class PartSelectionTool < SelectionTool
   
   def mouse_move( x,y )
     super
-    @current_part = @glview.select(x,y)
+    @current_comp = $manager.top_ancestor @glview.select(x,y)
     @glview.redraw
   end
   
@@ -174,27 +174,31 @@ class PartSelectionTool < SelectionTool
     GL.Color4f( 0.9, 0.2, 0, 0.5 )
     GL.Disable(GL::POLYGON_OFFSET_FILL)
     #@current_part.solid.faces.each{|f| f.draw } if @current_part
-    GL.CallList @current_part.displaylist if @current_part
+    if @current_comp
+      parts = (@current_comp.class == Assembly) ? @current_comp.contained_parts : [@current_comp]
+      for list in parts.map{|p| p.displaylist }
+        GL.CallList list
+      end
+    end
     GL.Enable(GL::POLYGON_OFFSET_FILL)
   end
 end
+
 
 class OperatorSelectionTool < SelectionTool
   def initialize
     super( GetText._("Select a feature from your model, right click for options:") )
     @draw_faces = []
-=begin
-    part = $manager.work_component
-    @op_displaylists = {}
-    part.operators.map do |op| 
-      faces = part.solid.faces.select{|f| f.created_by_op == op }
-      list = @glview.add_displaylist
-      GL.NewList( list, GL::COMPILE)
-        faces.each{|f| f.draw }
-      GL.EndList
-      @op_displaylists[op] = list
-    end
-=end
+    #part = $manager.work_component
+    #@op_displaylists = {}
+    #part.operators.map do |op| 
+    #  faces = part.solid.faces.select{|f| f.created_by_op == op }
+    #  list = @glview.add_displaylist
+    #  GL.NewList( list, GL::COMPILE)
+    #    faces.each{|f| f.draw }
+    #  GL.EndList
+    #  @op_displaylists[op] = list
+    #end
   end
   
   def selection_mode
@@ -203,6 +207,7 @@ class OperatorSelectionTool < SelectionTool
   
   def click_left( x,y )
     super
+    mouse_move( x,y )
     if (dim = @glview.select(x,y)).is_a? Dimension
       FloatingEntry.new( x,y, dim.value ) do |value| 
         dim.value = value
@@ -231,6 +236,8 @@ class OperatorSelectionTool < SelectionTool
       $manager.exit_current_mode
       $manager.operator_mode op
       #$manager.operator_mode @current_op
+    else
+      $manager.working_level_up
     end
   end
   
@@ -1255,6 +1262,10 @@ class EditSketchTool < SketchTool
     @glview.redraw
     menu = SketchSelectionToolMenu.new
     menu.popup(nil, nil, 3,  time)
+  end
+  
+  def double_click( x,y )
+    $manager.working_level_up if $manager.selection.empty?
   end
 end
 
