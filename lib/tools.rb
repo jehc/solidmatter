@@ -791,11 +791,14 @@ class LineTool < SketchTool
         if $manager.use_auto_constrain
           if @temp_line.pos1.x == @temp_line.pos2.x
             @sketch.constraints << VerticalConstraint.new( @sketch, @temp_line )
+            puts "vertical"
           elsif @temp_line.pos1.z == @temp_line.pos2.z
+            puts "horizontal"
             @sketch.constraints << HorizontalConstraint.new( @sketch, @temp_line )
           end
         end
         @first_line = false
+        @sketch.constraints.each{|c| c.visible = true }
         @sketch.build_displaylist
       end
     end
@@ -1207,14 +1210,13 @@ class EditSketchTool < SketchTool
           neu.y = original.y + move.y
           neu.z = original.z + move.z
         end
-        @sketch.update_constraints @points_to_drag
+        3.times{ @sketch.update_constraints @points_to_drag } #XXX once should be enough
         #@points_to_drag.each{|p| @sketch.update_constraints [p] }
-        @sketch.update_constraints @points_to_drag
       elsif @draw_dot
         @draw_dot.x = @old_draw_dot.x + move.x
         @draw_dot.y = @old_draw_dot.y + move.y
         @draw_dot.z = @old_draw_dot.z + move.z
-        @sketch.update_constraints [@draw_dot]
+        3.times{ @sketch.update_constraints [@draw_dot] }
       end
       @sketch.build_displaylist
       @glview.redraw

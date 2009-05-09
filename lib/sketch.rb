@@ -342,7 +342,6 @@ end
 class SketchConstraint
   include Selectable
   attr_accessor :selection_pass, :visible
-  @@tex = nil
   
   def initialize(sketch, temp=false)
     @sketch = sketch
@@ -366,21 +365,21 @@ class SketchConstraint
   end
   
   def setup_texture filename
-    unless @@tex
-      @@tex ||= GL.GenTextures(1)[0]
-      GL.BindTexture( GL::TEXTURE_2D, @@tex )
+    unless @tex
+      @tex ||= GL.GenTextures(1)[0]
+      GL.BindTexture( GL::TEXTURE_2D, @tex )
       GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL_LINEAR )
       GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL_LINEAR )
       GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_WRAP_S, GL::CLAMP )
       GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_WRAP_T, GL::CLAMP )
       map = Image.new filename
-      load_texture( map, @@tex )
+      load_texture( map, @tex )
     end
   end
   
   def draw
-    if @@tex and @tex_pos
-      GL.BindTexture( GL::TEXTURE_2D, @@tex )
+    if @tex and @tex_pos
+      GL.BindTexture( GL::TEXTURE_2D, @tex )
       GL.TexEnvf( GL::TEXTURE_ENV, GL::TEXTURE_ENV_MODE, GL::REPLACE )
       GL.Enable( GL::TEXTURE_2D )
       GL.Disable( GL::LIGHTING )
@@ -448,7 +447,9 @@ class HorizontalConstraint < SketchConstraint
       @p1 = p1_or_line.pos1
       @p2 = p1_or_line.pos2
     end
+    puts "Horizontal tex is #{@tex}"
     setup_texture '../data/icons/small/horizontal.png'
+    puts "Horizontal tex is after #{@tex}"
     super sketch
   end
   
@@ -478,7 +479,10 @@ class HorizontalConstraint < SketchConstraint
   end
   
   def draw
-    @tex_pos = (@p1 + @p2)/2.0 - Vector[0,0,0.015]
+    sketch_points = @sketch.segments.map{|s| s.dynamic_points }.flatten
+    center = sketch_points.inject{|sum,p| sum + p } / sketch_points.size
+    middle = (@p1 + @p2)/2.0
+    @tex_pos = middle + center.vector_to(middle).normalize * 0.015
     super
   end
 end
@@ -492,7 +496,9 @@ class VerticalConstraint < SketchConstraint
       @p1 = p1_or_line.pos1
       @p2 = p1_or_line.pos2
     end
+    puts "Vertical tex is #{@tex}"
     setup_texture '../data/icons/small/vertical.png'
+    puts "Vertical tex is after #{@tex}"
     super sketch
   end
   
@@ -522,7 +528,10 @@ class VerticalConstraint < SketchConstraint
   end
   
   def draw
-    @tex_pos = (@p1 + @p2) / 2.0
+    sketch_points = @sketch.segments.map{|s| s.dynamic_points }.flatten
+    center = sketch_points.inject{|sum,p| sum + p } / sketch_points.size
+    middle = (@p1 + @p2)/2.0
+    @tex_pos = middle + center.vector_to(middle).normalize * 0.015
     super
   end
 end
