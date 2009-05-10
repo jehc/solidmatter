@@ -509,8 +509,7 @@ class Part < Component
       $manager.glview.rebuild_selection_pass_colors
       $manager.component_changed self
       self.all_sketches.each{|sk| sk.refetch_plane_from_solid }
-      #$manager.glview.ground.generate_shadowmap
-      $manager.glview.shadow_fresh = false
+      $manager.has_been_changed = true
     else
       dia = Gtk::MessageDialog.new( nil, Gtk::Dialog::DESTROY_WITH_PARENT,
                                          Gtk::MessageDialog::WARNING,

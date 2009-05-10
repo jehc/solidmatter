@@ -111,6 +111,7 @@ end
 
 
 class GroundPlane
+  attr_reader :dirty
   def initialize res_x=32, res_y=32
     @res_x, @res_y = res_x, res_y
     @tex = GL.GenTextures(1)[0]
@@ -123,13 +124,16 @@ class GroundPlane
     clean_up
   end
   
+  def calculate_dimensions
+    @objects = $manager.project.all_part_instances.select{|p| p.visible }
+    @g_plane, @g_width, @g_height, @g_depth = ground @objects
+  end
+  
   def generate_shadowmap dialog=false
-    objects = $manager.project.all_part_instances.select{|p| p.visible }
-    solids = objects.map{|p| Marshal::load(Marshal.dump(p.solid)) } # need to copy solids for thread safety
+    solids = @objects.map{|p| Marshal::load(Marshal.dump(p.solid)) } # need to copy solids for thread safety
     GC.enable
-    @g_plane, @g_width, @g_height, @g_depth = ground objects
-    @objects = objects
     if @g_plane and $manager.glview.render_shadows
+      g_plane, g_width, g_height, g_depth = Marshal::load(Marshal.dump([@g_plane, @g_width, @g_height, @g_depth]))
       cancel = false
       if dialog
         progress = ProgressDialog.new( GetText._("<b>Rendering shadowmap...</b>") ){ cancel = true }
@@ -156,16 +160,16 @@ class GroundPlane
                 #XXX convert from object to world space
                 #s.pos1 = @g_plane.closest_point s.pos1
                 #s.pos2 = @g_plane.closest_point s.pos2
-                face_dist += (seg.pos1.y - @g_plane.origin.y).abs
+                face_dist += (seg.pos1.y - g_plane.origin.y).abs
                 seg
               end
               face_dist /= face.segments.size
               poly = Polygon::from_chain planar_loop
-              wx = @g_plane.origin.x - @g_width/2.0  + (x.to_f/@res_y)*@g_width
-              wz = @g_plane.origin.z - @g_depth/2.0  + (y.to_f/@res_y)*@g_depth
+              wx = g_plane.origin.x - g_width/2.0  + (x.to_f/@res_y)*g_width
+              wz = g_plane.origin.z - g_depth/2.0  + (y.to_f/@res_y)*g_depth
               p = Point.new(wx,wz)
               if poly.contains? p
-                value = 0.8 * (1.0 - face_dist/@g_height)
+                value = 0.8 * (1.0 - face_dist/g_height)
                 if value > pix.red 
                   pix.red   = value
                   pix.green = value
@@ -255,10 +259,15 @@ class GroundPlane
   
   def draw
     if @g_plane and $manager.glview.cameras[$manager.glview.current_cam_index].position.y > @g_plane.origin.y
-      draw_reflection
+      draw_reflection if $manager.glview.render_reflections and not $manager.glview.displaymode == :wireframe
       draw_floor
       draw_shadow if $manager.glview.render_shadows and not $manager.glview.displaymode == :wireframe
     end
+  end
+  
+  def dirty= bool
+    calculate_dimensions if bool
+    @dirty = bool
   end
   
   def clean_up
@@ -274,7 +283,7 @@ end
 
 
 class GLView < Gtk::DrawingArea
-  attr_accessor :num_callists, :immediate_draw_routines, :selection_color, :shadow_fresh
+  attr_accessor :num_callists, :immediate_draw_routines, :selection_color, :render_reflections
   attr_reader :displaymode, :ground, :cameras, :current_cam_index, :render_shadows, :stereo
   def initialize
     super
@@ -599,10 +608,11 @@ class GLView < Gtk::DrawingArea
     @render_shadows = b
     #@ground.generate_shadowmap true
     $manager.set_status_text GetText._("Rendering shadowmap...")
+    @ground.calculate_dimensions
     Thread.start do
       while @render_shadows
-        if not @shadow_fresh
-          @shadow_fresh = true
+        if @ground.dirty
+          @ground.dirty = false
           @ground.generate_shadowmap 
         end
         sleep 0.5
@@ -610,7 +620,7 @@ class GLView < Gtk::DrawingArea
     end
     redraw
   end
-  
+
   def stereo= b
     @stereo = b
     redraw

@@ -117,6 +117,7 @@ public
   
   def has_been_changed= v
     @has_been_changed = v
+    @glview.ground.dirty = true if @glview.ground
     @save_btn.sensitive = v if @save_btn
     correct_title
   end
@@ -336,6 +337,7 @@ public
     sketch.plane.visible = true
     sketch.plane.animate
     activate_tool 'select'
+    sketch.build_displaylist
     sketch.visible = true
   end
   

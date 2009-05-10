@@ -99,6 +99,40 @@ class ShadingButton < Gtk::MenuToolButton
 end
 
 
+class FloatingWidget < Gtk::Window
+  def initialize( x,y, *args, &b )
+    super()
+    # set style
+    #self.modal = true
+    self.transient_for = $manager.main_win
+    self.keep_above = true
+    self.decorated = false
+    self.skip_taskbar_hint = true
+    self.skip_pager_hint = true
+    setup_ui *args, &b
+    # position right next to cursor
+    x,y = convert2screen( x,y )
+    move( x,y )
+    show_all
+    # we position again after showing, as the window manager may ignore the first call
+    move( x,y )
+  end
+  
+  # convert glview to screen coords
+  def convert2screen( x,y )
+    win = $manager.main_win
+    glv = $manager.glview
+    x_offset = win.allocation.width - glv.allocation.width
+    y_offset = win.allocation.height - glv.parent.allocation.height
+    return $manager.main_win.position.first + x + x_offset, $manager.main_win.position.last + y + y_offset
+  end
+  
+  def setup_ui
+    raise "ERROR: Widget cannot draw itself"
+  end
+end
+
+
 class MeasureEntry < Gtk::VBox
   def initialize( label=nil )
     super false
@@ -141,39 +175,6 @@ class MeasureEntry < Gtk::VBox
 end
 
 
-class FloatingWidget < Gtk::Window
-  def initialize( x,y, *args, &b )
-    super()
-    # set style
-    #self.modal = true
-    self.transient_for = $manager.main_win
-    self.keep_above = true
-    self.decorated = false
-    self.skip_taskbar_hint = true
-    self.skip_pager_hint = true
-    setup_ui *args, &b
-    # position right next to cursor
-    x,y = convert2screen( x,y )
-    move( x,y )
-    show_all
-    # we position again after showing, as the window manager may ignore the first call
-    move( x,y )
-  end
-  
-  # convert glview to screen coords
-  def convert2screen( x,y )
-    win = $manager.main_win
-    glv = $manager.glview
-    x_offset = win.allocation.width - glv.allocation.width
-    y_offset = win.allocation.height - glv.parent.allocation.height
-    return $manager.main_win.position.first + x + x_offset, $manager.main_win.position.last + y + y_offset
-  end
-  
-  def setup_ui
-    raise "ERROR: Widget cannot draw itself"
-  end
-end
-
 class FloatingEntry < FloatingWidget
   def setup_ui value
     main_box = Gtk::HBox.new false
@@ -204,6 +205,7 @@ class FloatingEntry < FloatingWidget
   end
 end
 
+
 class SketchConstraintChooser < FloatingWidget
   def setup_ui segments
     main_box = Gtk::HBox.new false
@@ -222,6 +224,55 @@ class SketchConstraintChooser < FloatingWidget
   end
 end
 
+
+class SelectionView < Gtk::TreeView
+  def initialize title
+    super()
+    @items = {}
+    pix = Gtk::CellRendererPixbuf.new
+		text = Gtk::CellRendererText.new
+		column = Gtk::TreeViewColumn.new
+		column.pack_start(pix,false)
+		column.set_cell_data_func(pix) do |col, cell, model, iter|
+			cell.pixbuf = iter.get_value(0)
+		end
+		column.pack_start(text, true)
+		column.set_cell_data_func(text) do |col, cell, model, iter|
+			cell.markup = iter.get_value(1)
+		end
+		self.append_column( column )
+		self.selection.mode = Gtk::SELECTION_MULTIPLE
+		self.modify_base(Gtk::STATE_NORMAL, Gdk::Color::parse("#FFFF00"))
+		update
+  end
+  
+  def add_item( item, name )
+    @items[name] = item
+  end
+  
+  def remove_item item
+    @items.delete_if{|k,v| v == item }
+  end
+  
+  def selected_items
+    sel = []
+    self.selection.selected_each do |model, path, iter|
+      sel.push( @items[iter[0]] )
+    end
+    return sel
+  end
+
+  def update
+    model = Gtk::ListStore.new(Gdk::Pixbuf, String)
+    im = Gtk::Image.new('../data/icons/small/part_small.png').pixbuf
+    for name, item in @items
+		  iter = model.append
+  		iter[0] = im
+  		iter[1] = name
+		end
+		self.model = model
+  end
+end
 
 
 

@@ -35,7 +35,7 @@ class OpView < Gtk::ScrolledWindow
     end
     @tv = Gtk::TreeView.new
     @tv.reorderable = true
-    #@tv.hover_selection = true
+    @tv.hover_selection = true
     @tv.append_column( @column )
     @tv.set_size_request(100,0)
     self.add( @tv )

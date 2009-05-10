@@ -104,6 +104,7 @@ class ExtrudeOperator < Operator
       end
     end
     bar.append( sketch_button )
+    #bar.append SelectionView.new GetText._("Selection")
     bar.append( Gtk::SeparatorToolItem.new )
     # type button
     type_button = Gtk::ToolButton.new( Gtk::Image.new('../data/icons/tools.png'), GetText._("Type") )
