@@ -202,7 +202,7 @@ class SolidMatterMainWin < Gtk::Window
     # pack in OpView
     vbox = Gtk::VBox.new
     vbox.pack_start op_view
-    op_view.set_size_request(200,600)
+    op_view.set_size_request(200,400)
     # ... with controls
     up_btn = Gtk::Button.new
     up_btn.image = Gtk::Image.new '../data/icons/small/up_small.png'
@@ -246,9 +246,9 @@ class SolidMatterMainWin < Gtk::Window
     assembly_toolbar.append( GetText._("Belt"), "Create a (tooth)belt", "AssemblyToolbar/Belt", Gtk::Image.new('../data/icons/big/belt.png') ){}
     assembly_toolbar.append( GetText._("Animate"), "Induce motion into assembly", "AssemblyToolbar/Animate", Gtk::Image.new('../data/icons/middle/applications-system_middle.png') ){}
     assembly_toolbar.append( Gtk::SeparatorToolItem.new )
-    assembly_toolbar.append( GetText._("Grid pattern"), "Duplicate assembly in a 1/2/3 dimensional grid", "AssemblyToolbar/Grid", Gtk::Image.new('../data/icons/middle/assembly_middle.png') ){}
-    assembly_toolbar.append( GetText._("Circular pattern"), "Duplicate assembly with a radial offset", "AssemblyToolbar/Circular", Gtk::Image.new('../data/icons/middle/view-refresh_middle.png') ){}
-    assembly_toolbar.append( GetText._("Mirror"), "Mirror assembly along a plane", "AssemblyToolbar/Mirror", Gtk::Image.new('../data/icons/middle/align-vertical-center_middle.png') ){}
+    assembly_toolbar.append( GetText._("Pattern"), "Duplicate assembly in a 1/2/3 dimensional grid", "AssemblyToolbar/Grid", Gtk::Image.new('../data/icons/middle/assembly_middle.png') ){}
+    #assembly_toolbar.append( GetText._("Circular pattern"), "Duplicate assembly with a radial offset", "AssemblyToolbar/Circular", Gtk::Image.new('../data/icons/middle/view-refresh_middle.png') ){}
+    #assembly_toolbar.append( GetText._("Mirror"), "Mirror assembly along a plane", "AssemblyToolbar/Mirror", Gtk::Image.new('../data/icons/middle/align-vertical-center_middle.png') ){}
     part_toolbar.toolbar_style = Gtk::Toolbar::BOTH
     part_toolbar.icon_size = Gtk::IconSize::SMALL_TOOLBAR
     part_toolbar.show_arrow = true
@@ -259,12 +259,12 @@ class SolidMatterMainWin < Gtk::Window
     part_toolbar.append( GetText._("Revolve"), "Rotate a sketch around an axis to produce geometry", "PartToolbar/Revolve", Gtk::Image.new('../data/icons/middle/revolve_middle.png') ){}
     part_toolbar.append( GetText._("Hole"), "Drill hole", "PartToolbar/Hole", Gtk::Image.new('../data/icons/hole.png') ){}
     part_toolbar.append( GetText._("Shell"), "Shell out solid", "PartToolbar/Shell", Gtk::Image.new('../data/icons/big/shell.png') ){}
-    part_toolbar.append( GetText._("Loft"), "Connect several sketches with a surface", "PartToolbar/Loft", Gtk::Image.new('../data/icons/big/loft.png') ){}
+    #part_toolbar.append( GetText._("Loft"), "Connect several sketches with a surface", "PartToolbar/Loft", Gtk::Image.new('../data/icons/big/loft.png') ){}
     part_toolbar.append( GetText._("Sweep"), "Sweep sketch along path", "PartToolbar/Sweep", Gtk::Image.new('../data/icons/big/sweep.png') ){}
     part_toolbar.append( GetText._("Coil"), "Extrude sketch in a coiled fashion", "PartToolbar/Coil", Gtk::Image.new('../data/icons/big/coil.png') ){}
     part_toolbar.append( Gtk::SeparatorToolItem.new )
     part_toolbar.append( GetText._("Fillet"), "Fillet edge", "PartToolbar/Filet", Gtk::Image.new('../data/icons/big/fillet.png') ){}
-    part_toolbar.append( GetText._("Chamfer"), "Chamfer ege", "PartToolbar/Chamfer", Gtk::Image.new('../data/icons/big/chamfer.png') ){}
+    #part_toolbar.append( GetText._("Chamfer"), "Chamfer ege", "PartToolbar/Chamfer", Gtk::Image.new('../data/icons/big/chamfer.png') ){}
     part_toolbar.append( GetText._("Draft"), "Draft faces", "PartToolbar/Draft", Gtk::Image.new('../data/icons/big/draft.png') ){}
     part_toolbar.append( Gtk::SeparatorToolItem.new )
     part_toolbar.append( GetText._("FEM"), "Analyze physical properties", "PartToolbar/FEM", Gtk::Image.new('../data/icons/middle/extrude_middle.png') ){ $manager.add_operator('fem') }
