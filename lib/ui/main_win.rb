@@ -37,14 +37,7 @@ class SolidMatterMainWin < Gtk::Window
     @main_vbox = Gtk::VBox.new( false )
     @op_view_controls = Gtk::HBox.new
     Manager.new( self, op_view, glview, render_view, render_image, assembly_toolbar, part_toolbar, sketch_toolbar, statusbar, @main_vbox, @op_view_controls )
-    signal_connect('delete-event') do
-      CloseProjectConfirmation.new do |response|
-        case response
-          when :save then $manager.save_file and quit
-          when :close then quit
-        end
-      end
-    end
+    signal_connect('delete-event'){ try_quit }
     op_view.manager = $manager
     signal_connect("key-press-event"  ){|w,e| $manager.key_pressed e.keyval }
     signal_connect("key-release-event"){|w,e| $manager.key_released e.keyval }
@@ -71,7 +64,7 @@ class SolidMatterMainWin < Gtk::Window
         [GetText._("/File/sep1"), "<Separator>"],
         [GetText._("/File/Print..."), "<StockItem>", nil, Gtk::Stock::PRINT_PREVIEW, lambda{}],
         [GetText._("/File/sep2"), "<Separator>"],
-        [GetText._("/File/Quit"), "<StockItem>", nil, Gtk::Stock::QUIT, lambda{ quit }],
+        [GetText._("/File/Quit"), "<StockItem>", nil, Gtk::Stock::QUIT, lambda{ try_quit }],
       [GetText._("/_Edit")],
         [GetText._("/Edit/Undo"),        "<StockItem>", nil, Gtk::Stock::UNDO,  lambda{}],
         [GetText._("/Edit/Redo"),        "<StockItem>", nil, Gtk::Stock::REDO,  lambda{}],
@@ -93,7 +86,7 @@ class SolidMatterMainWin < Gtk::Window
         [GetText._("/View/sep4"), "<Separator>"],
         [GetText._("/View/Stereo vision"),       "<CheckItem>", nil, nil, lambda{|e,w| $manager.glview.stereo = w.active? }],
         [GetText._("/View/Diagnostic shading"),  "<CheckItem>", nil, nil, lambda{}],
-        [GetText._("/View/Render reflections"),  "<CheckItem>", nil, nil, lambda{|e,w| $manager.glview.render_reflections = w.active? }],
+        [GetText._("/View/Render reflections"),  "<CheckItem>", nil, nil, lambda{|e,w| $manager.glview.render_reflections = w.active? ; $manager.glview.redraw }],
         [GetText._("/View/Render shadows"),      "<CheckItem>", nil, nil, lambda{|e,w| $manager.glview.render_shadows = w.active? }],
         [GetText._("/View/sep4"), "<Separator>"],
         [GetText._("/View/Fullscreen"),   "<StockItem>", nil, Gtk::Stock::FULLSCREEN,  lambda{ @fullscreen ? (self.unfullscreen and @fullscreen = false) : (self.fullscreen and @fullscreen = true) }],
@@ -310,6 +303,15 @@ class SolidMatterMainWin < Gtk::Window
   def quit
     @render_dia.stop_rendering if @render_dia
     Gtk.main_quit
+  end
+
+  def try_quit
+    CloseProjectConfirmation.new do |response|
+      case response
+        when :save then $manager.save_file and quit
+        when :close then quit
+      end
+    end
   end
 end
 

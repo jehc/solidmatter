@@ -7,11 +7,10 @@ require 'operators.rb'
 require 'pop_ups.rb'
 
 def icon_for_op( op )
-  klass = op.class
-  case klass
-    when ExtrudeOperator then return  '../data/icons/extrude.png'
+  case op.class
+    when ExtrudeOperator then '../data/icons/extrude.png'
+    else nil
   end
-  return nil
 end
 
 class OpView < Gtk::ScrolledWindow
@@ -35,7 +34,7 @@ class OpView < Gtk::ScrolledWindow
     end
     @tv = Gtk::TreeView.new
     @tv.reorderable = true
-    @tv.hover_selection = true
+    #@tv.hover_selection = true
     @tv.append_column( @column )
     @tv.set_size_request(100,0)
     self.add( @tv )
@@ -43,8 +42,13 @@ class OpView < Gtk::ScrolledWindow
     @tv.signal_connect("button_press_event") do |widget, event|
       # right click
       if event.button == 3 
-        @tv.event(Gdk::EventButton.new(Gdk::Event::BUTTON_PRESS)) # XXX
-        sel = self.selections[0]
+        path = @tv.get_path_at_pos(event.x, event.y)
+        sel = path2component path.first
+        if self.selections.include? sel
+          sel = self.selections.first 
+        else
+          @tv.set_cursor( path.first, nil, false )
+        end
         menu = case sel
         when Operator
           OperatorMenu.new sel
@@ -56,7 +60,7 @@ class OpView < Gtk::ScrolledWindow
         menu.popup(nil, nil, event.button, event.time) if menu
       end
     end
-     @tv.signal_connect('row_activated') do 
+    @tv.signal_connect('row_activated') do 
       sel = self.selections[0]
       $manager.exit_current_mode
       if sel.is_a? Sketch
@@ -66,24 +70,47 @@ class OpView < Gtk::ScrolledWindow
       else
         $manager.change_working_level sel 
       end
-     end
+    end
+    @tv.signal_connect("motion_notify_event") do |widget, e|
+      path = @tv.get_path_at_pos(e.x, e.y)
+      if path
+        comp = path2component path.first
+        unless comp.is_a? Operator or comp.is_a? Sketch
+          $manager.glview.immediate_draw_routines << lambda do
+            GL.Color4f( 0.9, 0.2, 0, 0.5 )
+            GL.Disable(GL::POLYGON_OFFSET_FILL)
+            parts = (comp.class == Assembly) ? comp.contained_parts : [comp]
+            for list in parts.map{|p| p.displaylist }
+              GL.CallList list
+            end
+            GL.Enable(GL::POLYGON_OFFSET_FILL)
+          end
+          $manager.glview.redraw
+          $manager.glview.immediate_draw_routines.pop
+        end
+      end
+    end
   end
   
   def selections
     sels = []
     @tv.selection.selected_each do |model, path, iter|
       # dive down hierarchy to real selection
-      comps = [@base_component]
-      sel = nil
-      path.indices.each do |i|
-        sel = comps[i]
-        comps = sel.components if sel.class == Assembly
-        comps = (sel.operators + sel.unused_sketches) if sel.class == Part
-        comps = [sel.settings[:sketch]] if sel.is_a? Operator and sel.settings[:sketch]
-      end
-      sels.push( sel )
+      sels.push( path2component path )
     end
     return sels
+  end
+  
+  def path2component path
+    comps = [@base_component]
+    sel = nil
+    path.indices.each do |i|
+      sel = comps[i]
+      comps = sel.components if sel.class == Assembly
+      comps = (sel.operators + sel.unused_sketches) if sel.class == Part
+      comps = [sel.settings[:sketch]] if sel.is_a? Operator and sel.settings[:sketch]
+    end
+    sel
   end
 
   def update
