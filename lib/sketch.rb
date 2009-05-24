@@ -171,7 +171,7 @@ module ChainCompletion
       chains.push kette
       segs = segs - kette if kette
     end until segs.empty? or not kette
-    puts "#{chains.compact.size} chains found"
+    #puts "#{chains.compact.size} chains found"
     return chains.compact
   end
   

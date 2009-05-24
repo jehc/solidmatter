@@ -72,24 +72,36 @@ class OpView < Gtk::ScrolledWindow
       end
     end
     @tv.signal_connect("motion_notify_event") do |widget, e|
-      path = @tv.get_path_at_pos(e.x, e.y)
-      if path
-        comp = path2component path.first
-        unless comp.is_a? Operator or comp.is_a? Sketch
-          $manager.glview.immediate_draw_routines << lambda do
-            GL.Color4f( 0.9, 0.2, 0, 0.5 )
-            GL.Disable(GL::POLYGON_OFFSET_FILL)
-            parts = (comp.class == Assembly) ? comp.contained_parts : [comp]
-            for list in parts.map{|p| p.displaylist }
-              GL.CallList list
-            end
-            GL.Enable(GL::POLYGON_OFFSET_FILL)
-          end
+      unless Gtk::events_pending?
+        path = @tv.get_path_at_pos(e.x, e.y)
+        if path
+          comp = path2component path.first
+          draw_highlighted comp unless comp.is_a? Operator or comp.is_a? Sketch
+        else
           $manager.glview.redraw
-          $manager.glview.immediate_draw_routines.pop
         end
       end
     end
+    @tv.signal_connect("cursor_changed") do |w|
+      sel = self.selections.first 
+      $manager.select sel
+      draw_highlighted sel
+    end
+  end
+  
+  def draw_highlighted comp
+    $manager.glview.immediate_draw_routines << lambda do
+      GL.Color4f( 0.9, 0.2, 0, 0.5 )
+      GL.Disable(GL::POLYGON_OFFSET_FILL)
+      parts = (comp.class == Assembly) ? comp.contained_parts : [comp]
+      for list in parts.map{|p| p.displaylist }
+        GL.CallList list
+      end
+      GL.Enable(GL::POLYGON_OFFSET_FILL)
+    end
+    $manager.glview.redraw
+    $manager.glview.immediate_draw_routines.pop
+
   end
   
   def selections

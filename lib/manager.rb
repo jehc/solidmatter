@@ -561,7 +561,7 @@ public
   end
   
   def key_pressed( key )
-    puts key
+    #puts key
     @keys_pressed.push key
     activate_tool( "camera", true ) if @keymap[key] == :Ctrl
     cancel_current_tool             if @keymap[key] == :Esc

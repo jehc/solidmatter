@@ -669,7 +669,7 @@ class Assembly < Component
   
   def contained_parts
     parts = @components.select{|c| c.class == Part }
-    return parts + @components.select{|c| c.class == Assembly }.map{|a| a.contained_parts }
+    return parts + @components.select{|c| c.class == Assembly }.map{|a| a.contained_parts }.flatten
   end
 
   def display_properties
