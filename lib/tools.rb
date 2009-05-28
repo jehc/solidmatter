@@ -143,6 +143,7 @@ class PartSelectionTool < SelectionTool
     else
       $manager.selection.deselect_all
     end
+    $manager.op_view.select @current_comp
   end
   
   def double_click( x,y )

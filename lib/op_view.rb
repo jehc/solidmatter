@@ -101,7 +101,19 @@ class OpView < Gtk::ScrolledWindow
     end
     $manager.glview.redraw
     $manager.glview.immediate_draw_routines.pop
-
+  end
+  
+  def select comp
+    path = ""
+    while comp
+      path = comp.parent.components.index(comp).to_s + ":" + path
+      break if comp.parent == @base_component
+      comp = comp.parent
+    end
+    path = "0:" + path
+    path.chop!
+    path = Gtk::TreePath.new path
+    @tv.set_cursor( path, nil, false )
   end
   
   def selections
