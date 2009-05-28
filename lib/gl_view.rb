@@ -6,6 +6,7 @@
 require 'gtkglext'
 require 'matrix.rb'
 require 'image.rb'
+require 'geometry.rb'
 require 'tools.rb'
 require 'ui/component_browser.rb'
 
@@ -291,6 +292,7 @@ class GLView < Gtk::DrawingArea
     @displaymode = :overlay
     # these are called for immediate mode drawing
     @immediate_draw_routines = []
+    @handles = []
     @all_displaylists = []
     # camera handling stuff
     @max_remembered_views = 25
@@ -660,6 +662,7 @@ class GLView < Gtk::DrawingArea
       recurse_draw $manager.project.main_assembly
       wc = $manager.work_component
       wc.dimensions.each{|c| recurse_draw c }
+      @handles.each{|h| @selection_pass ? h.draw_for_selection : h.draw }
       # draw 3d interface stuff
       GL.Disable(GL::LIGHTING)
       unless @selection_pass or @picking_pass
@@ -724,7 +727,7 @@ class GLView < Gtk::DrawingArea
         if @selection_pass
           GL.Disable GL::LIGHTING
           unless $manager.work_sketch
-            if $manager.current_tool.selection_mode == :select_edges
+            if $manager.current_tool.selection_modes.include? :edges
               GL.CallList top_comp.wire_selection_displaylist
             else
               GL.CallList top_comp.selection_displaylist
@@ -762,7 +765,7 @@ class GLView < Gtk::DrawingArea
         c = top_comp.selection_pass_color
         GL.Color3f( c[0],c[1],c[2] ) if c
         GL.Disable(GL::POLYGON_OFFSET_FILL)
-        GL.CallList( (@picking_pass or @selection_pass == :select_planes or @selection_pass == :select_faces_and_planes) ? top_comp.pick_displaylist : top_comp.displaylist )
+        GL.CallList( (@picking_pass or @selection_pass.include? :planes or @selection_pass.include? :faces) ? top_comp.pick_displaylist : top_comp.displaylist )
         GL.Enable(GL::POLYGON_OFFSET_FILL)
       ### ---------------------- Sketch constraint ---------------------- ###
       elsif top_comp.is_a? SketchConstraint
@@ -821,38 +824,33 @@ class GLView < Gtk::DrawingArea
     return pos
   end
   
-  def rebuild_selection_pass_colors type=nil
-    if type or $manager.current_tool.is_a?(SelectionTool)
-      type ||= $manager.current_tool.selection_mode
+  def rebuild_selection_pass_colors types=nil
+    if types or $manager.current_tool.is_a?(SelectionTool)
+      types ||= $manager.current_tool.selection_modes
       visible_parts = $manager.project.all_part_instances.select{|inst| inst.visible }
-      case type
-      when :select_faces
-        @selectables = visible_parts.map{|inst| inst.solid.faces }.flatten
-      when :select_edges
-        @selectables = visible_parts.map{|inst| inst.solid.faces.map{|f| f.segments } }.flatten
-        visible_parts.map{|inst| inst.build_wire_selection_displaylist }
-      when :select_planes
-        @selectables = $manager.work_component.working_planes
-      when :select_faces_and_planes
-        @selectables = $manager.work_component.working_planes.dup
-        @selectables += visible_parts.map{|inst| inst.solid.faces }.flatten
-      when :select_instances
-        @selectables = visible_parts
-      when :select_segments
-        if $manager.work_sketch
-          @selectables = $manager.work_sketch.segments
-        else
-          @selectables = $manager.work_component.unused_sketches.map{|sk| sk.segments }.flatten if $manager.work_component.class == Part
+      @selectables = []
+      for type in types
+        case type
+        when :faces
+          @selectables += visible_parts.map{|inst| inst.solid.faces }.flatten
+        when :edges
+          @selectables += visible_parts.map{|inst| inst.solid.faces.map{|f| f.segments } }.flatten
+          visible_parts.each{|inst| inst.build_wire_selection_displaylist }
+        when :planes
+          @selectables += $manager.work_component.working_planes
+        when :instances
+          @selectables += visible_parts
+        when :segments
+          if $manager.work_sketch
+            @selectables += $manager.work_sketch.segments
+          else
+            @selectables += $manager.work_component.unused_sketches.map{|sk| sk.segments }.flatten if $manager.work_component.class == Part
+          end
+        when :dimensions
+          @selectables += $manager.work_component.dimensions
         end
-      when :select_dimensions
-        @selectables = $manager.work_component.dimensions
-      when :select_segments_and_dimensions
-        @selectables = $manager.work_sketch.segments.dup
-        @selectables += $manager.work_component.dimensions
-      when :select_faces_and_dimensions
-        @selectables = visible_parts.map{|inst| inst.solid.faces }.flatten
-        @selectables += $manager.work_component.dimensions
       end
+      @selectables += @handles
       # create colors to represent selectable objects
       current_color = [0, 0, 0]
       @color_increment = 1.0 / 255
@@ -871,18 +869,18 @@ class GLView < Gtk::DrawingArea
         i == 2 ? i = 0 : i += 1 
       end
       parts_to_build.uniq.each{|p| p.build_selection_displaylist }
-      visible_parts.map{|inst| inst.build_wire_selection_displaylist } if type == :select_edges
+      visible_parts.map{|inst| inst.build_wire_selection_displaylist } if types.include? :edges
     end
   end
   
-  def select( x, y, type=true )
+  def select( x, y, types=true )
     if @selectables
       # corect coords from gtk to GL orientation
       y = allocation.height - y
       # change rendering style to aliased, flat-color rendering
       render_style :selection_pass
       # render colorcoded scene to the back buffer
-      @selection_pass = type
+      @selection_pass = types
       redraw
       @selection_pass = false
       # look up color under cursor
@@ -1099,6 +1097,29 @@ class GLView < Gtk::DrawingArea
   end
 end
 
+
+class ArrowHandle
+  include Selectable
+  def initialize( pos, dir )
+    
+  end
+  
+  def draw
+    points = @selection.segments.map{|s| s.snap_points }.flatten
+    center = points.inject{|sum, p| sum + p } / points.size
+    q = GLU.NewQuadric
+    GL.PushMatrix 
+      GL.Rotatef(90, 1.0, 0.0, 0.0)
+      GL.Translatef( 1.0, 0.0, 0.0 )
+      GLU.Cylinder( q, 0.05, 0.05, 0.1, 8, 3 )
+    GL.PopMatrix
+    GLU.DeleteQuadric q
+  end
+  
+  def draw_for_selection
+  
+  end
+end
 
 
 

@@ -108,10 +108,10 @@ class SelectionTool < Tool
     super text
     @selection = nil
     @callback = Proc.new if block_given?
-    @glview.rebuild_selection_pass_colors selection_mode
+    @glview.rebuild_selection_pass_colors selection_modes
   end
   
-  def selection_mode
+  def selection_modes
     raise "Must be overridden"
   end
   
@@ -127,8 +127,8 @@ class PartSelectionTool < SelectionTool
     super( GetText._("Drag a part to move it around, right click for options:") )
   end
   
-  def selection_mode
-    :select_instances
+  def selection_modes
+    [:instances]
   end
   
   def click_left( x,y )
@@ -202,8 +202,8 @@ class OperatorSelectionTool < SelectionTool
     #end
   end
   
-  def selection_mode
-    :select_faces_and_dimensions
+  def selection_modes
+    [:faces, :dimensions]
   end
   
   def click_left( x,y )
@@ -303,8 +303,8 @@ class RegionSelectionTool < SelectionTool
     @glview.redraw
   end
   
-  def selection_mode
-    :select_planes
+  def selection_modes
+    [:planes]
   end
   
   def click_left( x,y )
@@ -365,8 +365,8 @@ class PlaneSelectionTool < SelectionTool
     $manager.work_component.working_planes.each{|plane| plane.visible = true }
   end
   
-  def selection_mode
-    :select_faces_and_planes
+  def selection_modes
+    [:faces, :planes]
   end
   
   def click_left( x,y )
@@ -394,8 +394,8 @@ class FaceSelectionTool < SelectionTool
     super GetText._("Select solid faces or surfaces:")
   end
   
-  def selection_mode
-    :select_faces
+  def selection_modes
+    [:faces]
   end
   
   def click_left( x,y )
@@ -431,8 +431,8 @@ class EdgeSelectionTool < SelectionTool
     @no_depth = true
   end
   
-  def selection_mode
-    :select_edges
+  def selection_modes
+    [:edges]
   end
   
   def click_left( x,y )
@@ -446,7 +446,7 @@ class EdgeSelectionTool < SelectionTool
   
   def mouse_move( x,y )
     super
-    @current_edge = @glview.select( x,y, selection_mode )
+    @current_edge = @glview.select( x,y, selection_modes )
     @glview.redraw
   end
   
@@ -457,6 +457,65 @@ class EdgeSelectionTool < SelectionTool
   end
   
   def resume
+    super
+  end
+end
+
+
+class TweakTool < SelectionTool
+    def initialize
+    super GetText._("Select solid faces and drag the arrow to change your objects shape:")
+  end
+  
+  def selection_modes
+    [:faces, :handles]
+  end
+  
+  def click_left( x,y )
+    super
+    if @current_face
+      points = @selection.segments.map{|s| s.snap_points }.flatten
+      center = points.inject{|sum, p| sum + p } / points.size
+      $manager.glview.handles.delete @handle
+      @handle = ArrowHandle.new( center, dir )
+      $manager.glview.handles.push @handle
+    end
+  end
+  
+  def press_left
+    super
+    mouse_move( x,y )
+    if @current_handle
+    
+    end
+  end
+  
+  def drag_left( x,y )
+    
+  end
+  
+  def release_left
+    
+  end
+  
+  def mouse_move( x,y )
+    super
+    @current_face = @glview.select(x,y, [:faces])
+    @current_face = nil unless $manager.work_component.solid.faces.include? @current_face
+    @current_handle = @glview.select(x,y, [:handles])
+    @glview.redraw
+  end
+  
+  def draw
+    super
+    GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
+    GL.Disable(GL::POLYGON_OFFSET_FILL)
+    @current_face.draw if @current_face
+    GL.Enable(GL::POLYGON_OFFSET_FILL)
+  end
+  
+  def exit
+    $manager.glview.handles.delete @handle
     super
   end
 end
@@ -574,7 +633,7 @@ class SketchTool < Tool
   
   def resume
     super
-    @glview.rebuild_selection_pass_colors :select_segments_and_dimensions
+    @glview.rebuild_selection_pass_colors [:segments, :dimensions]
   end
   
   # snap points to guides, then to other points, then to grid
