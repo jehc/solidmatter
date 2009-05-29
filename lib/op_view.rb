@@ -90,6 +90,7 @@ class OpView < Gtk::ScrolledWindow
   end
   
   def draw_highlighted comp
+    return unless comp
     $manager.glview.immediate_draw_routines << lambda do
       GL.Color4f( 0.9, 0.2, 0, 0.5 )
       GL.Disable(GL::POLYGON_OFFSET_FILL)

@@ -765,7 +765,7 @@ class GLView < Gtk::DrawingArea
         c = top_comp.selection_pass_color
         GL.Color3f( c[0],c[1],c[2] ) if c
         GL.Disable(GL::POLYGON_OFFSET_FILL)
-        GL.CallList( (@picking_pass or @selection_pass.include? :planes or @selection_pass.include? :faces) ? top_comp.pick_displaylist : top_comp.displaylist )
+        GL.CallList( (@picking_pass or (@selection_pass and (@selection_pass.include? :planes or @selection_pass.include? :faces))) ? top_comp.pick_displaylist : top_comp.displaylist )
         GL.Enable(GL::POLYGON_OFFSET_FILL)
       ### ---------------------- Sketch constraint ---------------------- ###
       elsif top_comp.is_a? SketchConstraint
@@ -873,7 +873,7 @@ class GLView < Gtk::DrawingArea
     end
   end
   
-  def select( x, y, types=true )
+  def select( x, y, types=[] )
     if @selectables
       # corect coords from gtk to GL orientation
       y = allocation.height - y

@@ -322,7 +322,7 @@ class RegionSelectionTool < SelectionTool
     super
     for sketch in @all_sketches
       sketch.plane.visible = true
-      sel = @glview.select(x,y, :select_planes)
+      sel = @glview.select(x,y, [:planes])
       sketch.plane.visible = false
       if sel
         pos = pos_of( x,y, sel )
@@ -371,7 +371,7 @@ class PlaneSelectionTool < SelectionTool
   
   def click_left( x,y )
     super
-    sel = @glview.select(x,y, :select_faces_and_planes)
+    sel = @glview.select(x,y, [:faces, :planes])
     if sel
       if sel.is_a? PlanarFace
         @selection = sel.plane
@@ -409,7 +409,7 @@ class FaceSelectionTool < SelectionTool
   
   def mouse_move( x,y )
     super
-    @current_face = @glview.select(x,y, :select_faces)
+    @current_face = @glview.select(x,y, [:faces])
     raise "Wörkking plane" if @current_face.is_a? WorkingPlane
     @current_face = nil unless $manager.work_component.solid.faces.include? @current_face
     @glview.redraw

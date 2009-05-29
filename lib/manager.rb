@@ -305,7 +305,7 @@ public
       @selection.deselect_all
       return true
     elsif @work_operator
-      @work_operator.settings[:sketch].visible = false if @work_component.settings[:sketch]
+      @work_operator.settings[:sketch].visible = false if @work_operator.settings[:sketch]
       @main_vbox.remove( @op_toolbar )
       @op_toolbar = nil
       @work_operator = nil
