@@ -864,6 +864,8 @@ class LineTool < SketchTool
     end
     @last_point, @last_point_was_snapped = snapped( x,y )
     @last_reference_points.push @last_point
+    $manager.cancel_current_tool if @last_point == @first_point
+    @first_point ||= @last_point
   end
   
   # update temp line
