@@ -18,7 +18,7 @@ class RenderDialog
     parts = $manager.project.main_assembly.contained_parts.select{|p| p.visible }
     luxdata = generate_luxrender parts, $manager.glview.allocation.width-2, $manager.glview.allocation.height-2, false
     File::open("/tmp/lux.lxs",'w'){|f| f << luxdata }
-    Thread.start{ `./../bin/luxconsole /tmp/lux.lxs` }
+    Thread.start{ `luxconsole /tmp/lux.lxs` }
     $manager.glview.visible = false
     $manager.render_view.visible = true
     $manager.set_status_text "Rendering started..."
@@ -28,10 +28,10 @@ class RenderDialog
       loop do
         sleep $preferences[:lux_display_interval]
         Gtk.queue{ $manager.set_status_text "Render time: #{time_from start_time}" }
-        if File.exist? "/tmp/lux.tga"
-          #`cp /tmp/lux.tga /tmp/luxcopy.tga`
+        if File.exist? "/tmp/lux.png"
+          #`cp /tmp/lux.png /tmp/luxcopy.png`
           Gtk.queue do
-            gtkim = Gtk::Image.new("/tmp/lux.tga")
+            gtkim = Gtk::Image.new("/tmp/lux.png")
             $manager.render_image.pixbuf = gtkim.pixbuf
           end
         end
@@ -50,7 +50,7 @@ class RenderDialog
     if dia.run == Gtk::Dialog::RESPONSE_ACCEPT
       filename = dia.filename
       filename += '.png' unless filename =~ /.png/
-      im = Image.new "/tmp/lux.tga"
+      im = Image.new "/tmp/lux.png"
       im.save filename
     end
     dia.destroy
@@ -83,8 +83,8 @@ class RenderDialog
                  \"integer reject_warmup\" [3] \"bool debug\" [\"false\"] \"float colorspace_white\" [0.314275 0.329411] 
                  \"float colorspace_red\" [0.630000 0.340000] \"float colorspace_green\" [0.310000 0.595000]
                  \"float colorspace_blue\" [0.155000 0.070000] \"float gamma\" [2.200000]
-           PixelFilter \"gaussian\" \"float xwidth\" [1.500000] \"float ywidth\" [1.500000] \"float alpha\" [2.000000]
-           Sampler \"metropolis\" \"float largemutationprob\" [0.400000] \"integer maxconsecrejects\" [128]
+           PixelFilter \"mitchell\" \"float B\" [0.667000] \"float C\" [0.166500]
+           Sampler \"metropolis\" \"float largemutationprob\" [0.400000]
            SurfaceIntegrator \"path\" \"integer maxdepth\" [8] \"string strategy\" [\"auto\"] \"string rrstrategy\" [\"efficiency\"]
            VolumeIntegrator \"single\" \"float stepsize\" [1.000000]
            Accelerator \"tabreckdtree\" \"integer intersectcost\" [80] \"integer traversalcost\" [1] \"float emptybonus\" [0.200000]
@@ -93,15 +93,21 @@ class RenderDialog
     lxs << "WorldBegin\n"
     # create lights
     lxs << 'AttributeBegin
-              LightSource "infinite" "color L" [0.0565629 0.220815 0.3]
+              LightGroup "default"
+              LightSource "infinite" 
+                "color L" [0.0565629 0.220815 0.2]
+                "float gain" [1.000000]
             AttributeEnd
            '
-    lxs << 'AttributeBegin
+    lxs << 'TransformBegin
             Transform [-0.290864646435 1.35517116785 -0.0551890581846 0.0  -0.771100819111 -0.19988335669 0.604524731636 0.0  0.566393196583 0.21839119494 0.794672250748 0.0  4.07624530792 1.00545394421 5.90386199951 1.0]
-            AreaLightSource "area" "color L" [0.900000 0.900000 0.900000] "float gain" [10.427602]
-            "color L" [0.900000 0.900000 0.900000] "float gain" [15.0]  Shape "trianglemesh" "integer indices" [0 1 2 0 2 3] "point P" [-1.000000 1.000000 0.0 1.000000 1.000000 0.0 1.000000 -1.000000 0.0 -1.000000 -1.000000 0.0]
-           AttributeEnd
-           '
+            LightGroup "default"
+            Texture "Lamp:light:L" "color" "blackbody"
+            "float temperature" [6500.000000]
+            LightSource "point" "texture L" ["Lamp:light:L"]
+            "float gain" [28.924402]
+            TransformEnd
+            '
     puts "static stuff finished"
     # create materials
     lxs << "MakeNamedMaterial \"default_mat\" \"string type\" [\"matte\"] \"color Kd\" [0.9 0.9 0.9]"
