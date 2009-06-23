@@ -283,8 +283,10 @@ end
 
 Region = Struct.new(:chain, :poly, :face)
 class RegionSelectionTool < SelectionTool
+  attr_accessor :selection
   def initialize
     super( GetText._("Pick a closed region from a sketch:") )
+    @selection = []
     # create a list of regions that can be picked
     @op_sketch = $manager.work_operator.settings[:sketch]
     @all_sketches = ($manager.work_component.unused_sketches + [@op_sketch]).compact
@@ -292,13 +294,21 @@ class RegionSelectionTool < SelectionTool
       regions + sketch.all_chains.reverse.map do |chain|
         poly = Polygon.from_chain chain #.map{|seg| seg.tesselate }.flatten
         face = PlanarFace.new
-        face.plane = sketch.plane
-        face.plane.build_displaylists #XXX kann man evtl weglassen
-        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(Tool.sketch2world(seg.pos1, sketch.plane), Tool.sketch2world(seg.pos2, sketch.plane), sketch)  }
+        face.plane = sketch.plane.plane
+        sketch.plane.build_displaylists
+        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(Tool.sketch2world(seg.pos1, sketch.plane.plane), Tool.sketch2world(seg.pos2, sketch.plane.plane), sketch)  }
         Region.new(chain, poly, face)
       end
     end
     @regions.compact!
+    $manager.on_key_released(:Shift) do
+      if @selection.empty?
+        true
+      else
+        $manager.cancel_current_tool 
+        false
+      end
+    end
     @op_sketch.visible = true if @op_sketch
     @glview.redraw
   end
@@ -311,10 +321,12 @@ class RegionSelectionTool < SelectionTool
     super
     mouse_move( x,y )
     if @current_region
-      @selection ||= []
-      @selection.push @current_region.chain
-      @selection = @selection.first # XXX should really combine the regions into one
-      $manager.cancel_current_tool unless $manager.key_pressed? :Shift
+      if $manager.key_pressed? :Shift
+        @selection.push @current_region.chain
+      else
+        @selection = [@current_region.chain]
+        $manager.cancel_current_tool
+      end
     end
   end
 
@@ -326,7 +338,7 @@ class RegionSelectionTool < SelectionTool
       sketch.plane.visible = false
       if sel
         pos = pos_of( x,y, sel )
-        @current_region = @regions.select{|r| r.face.plane == sel and r.poly.contains? Point.new( pos.x, pos.z ) }.first
+        @current_region = @regions.select{|r| r.face.plane == sel.plane and r.poly.contains? Point.new( pos.x, pos.z ) }.first
         @glview.redraw
         break if @current_region
       end
@@ -336,9 +348,16 @@ class RegionSelectionTool < SelectionTool
   
   def draw
     super
-    GL.Color4f( 0.9, 0.2, 0, 0.5 )
     GL.Disable(GL::POLYGON_OFFSET_FILL)
-    @current_region.face.draw if @current_region
+    if @current_region
+      GL.Color4f( 0.9, 0.2, 0, 0.5 )
+      @current_region.face.draw
+    end
+    unless @selection.empty?
+      GL.Color4f( 0.2, 0.5, 0.8, 0.5 )
+      regions = @regions.select{|r| @selection.include? r.chain }
+      regions.each{|r| r.face.draw }
+    end
     GL.Enable(GL::POLYGON_OFFSET_FILL)
   end
   
@@ -346,7 +365,7 @@ class RegionSelectionTool < SelectionTool
     planestate = plane.visible
     plane.visible = true
     pos = @glview.screen2world( x,y )
-    pos = Tool.world2sketch( pos, plane ) if pos
+    pos = Tool.world2sketch( pos, plane.plane ) if pos
     plane.visible = planestate
     return pos
   end
@@ -373,11 +392,7 @@ class PlaneSelectionTool < SelectionTool
     super
     sel = @glview.select(x,y, [:faces, :planes])
     if sel
-      if sel.is_a? PlanarFace
-        @selection = sel.plane
-      elsif sel.is_a? WorkingPlane
-        @selection = sel
-      end
+      @selection = sel.plane
       $manager.cancel_current_tool
     end
   end
@@ -432,7 +447,7 @@ class EdgeSelectionTool < SelectionTool
   end
   
   def selection_modes
-    [:edges]
+    $manager.work_operator.is_a?(RevolveOperator) ? [:segments] : [:edges]
   end
   
   def click_left( x,y )
@@ -817,11 +832,11 @@ class SketchTool < Tool
   end
   
   def world2sketch( v )
-    Tool.world2sketch( v, @sketch.plane)
+    Tool.world2sketch( v, @sketch.plane.plane)
   end
   
   def sketch2world( v )
-    Tool.sketch2world( v, @sketch.plane)
+    Tool.sketch2world( v, @sketch.plane.plane)
   end
   
   def exit
@@ -909,15 +924,15 @@ class ArcTool < SketchTool
         $manager.set_status_text GetText._("Click left to select first point on arc:")
       when 2
         @radius = @center.distance_to point
-        @start_angle = 360 - (@sketch.plane.u_vec.angle @center.vector_to point)
+        @start_angle = 360 - (@sketch.plane.plane.u_vec.angle @center.vector_to point)
         @start_point = point
         $manager.set_status_text GetText._("Click left to select second point on arc:")
       when 3
-        #end_angle = 360 - @sketch.plane.u_vec.angle( @center.vector_to( point ) )
-        end_angle = @sketch.plane.u_vec.angle @center.vector_to point
+        #end_angle = 360 - @sketch.plane.plane.u_vec.angle( @center.vector_to( point ) )
+        end_angle = @sketch.plane.plane.u_vec.angle @center.vector_to point
         end_angle = 360 - end_angle 
         end_angle = 360 - end_angle if point.z > @center.z
-        @sketch.segments.push Arc.new( @center, @radius, @start_angle, end_angle, @sketch )
+        @sketch.segments.push Arc2D.new( @center, @radius, @start_angle, end_angle, @sketch )
         @sketch.build_displaylist
         $manager.cancel_current_tool
       end
@@ -935,10 +950,10 @@ class ArcTool < SketchTool
       when 2
         @temp_segments = [ Line.new( @center, point, @sketch ) ]
       when 3
-        end_angle =@sketch.plane.u_vec.angle @center.vector_to point
+        end_angle =@sketch.plane.plane.u_vec.angle @center.vector_to point
         end_angle = 360 - end_angle 
         end_angle = 360 - end_angle if point.z > @center.z
-        arc = Arc.new( @center, @radius, @start_angle, end_angle )
+        arc = Arc2D.new( @center, @radius, @start_angle, end_angle )
         @temp_segments = [ Line.new( @center, arc.pos1 ), arc, Line.new( @center, arc.pos2 ) ]
       end
     end
@@ -963,7 +978,7 @@ class CircleTool < SketchTool
         $manager.set_status_text GetText._("Click left to select a point on the circle:")
       when 2
         radius = @center.distance_to point
-        @sketch.segments.push Circle.new( @center, radius, @sketch )
+        @sketch.segments.push Circle2D.new( @center, radius, @sketch )
         @sketch.build_displaylist
         $manager.cancel_current_tool
       end
@@ -979,7 +994,7 @@ class CircleTool < SketchTool
     if point
       if @step == 2
         radius = @center.distance_to point
-        circle = Circle.new( @center, radius )
+        circle = Circle2D.new( @center, radius )
         @temp_segments = [ Line.new(@center, point), circle ]
       end
     end
@@ -1003,7 +1018,7 @@ class TwoPointCircleTool < SketchTool
         @p1 = point
         $manager.set_status_text GetText._("Click left to select second point on circle:")
       when 2
-        @sketch.segments.push Circle::from_opposite_points( @p1, point, @sketch )
+        @sketch.segments.push Circle2D::from_opposite_points( @p1, point, @sketch )
         @sketch.build_displaylist
         $manager.cancel_current_tool
       end
@@ -1017,7 +1032,7 @@ class TwoPointCircleTool < SketchTool
     point, was_snapped = snapped( x,y )
     @draw_dot = was_snapped ? point : nil
     if point and @step == 2
-      @temp_segments = [ Circle::from_opposite_points( @p1, point ) ]
+      @temp_segments = [ Circle2D::from_opposite_points( @p1, point, @sketch.plane.plane.dup ) ]
     end
     @glview.redraw
   end
@@ -1066,7 +1081,7 @@ class DimensionTool < SketchTool
   
   def dimension_for( seg_or_points, x,y, temp=false )
     if pos = @glview.screen2world( x,y )
-      if seg_or_points.is_a? Arc
+      if seg_or_points.is_a? Arc2D
         RadialDimension.new( seg_or_points, world2sketch(pos), @sketch, temp )
       elsif seg_or_points.is_a? Line
         width  = (seg_or_points.pos1.x - seg_or_points.pos2.x).abs
@@ -1217,8 +1232,8 @@ class EditSketchTool < SketchTool
     case sel
     when Segment
       if $manager.key_pressed? :Shift
-        $manager.selection.add sel
-        @selection ? (@selection.push sel) : (@selection = [])
+        $manager.selection.switch sel
+        @selection = $manager.selection.all
       else
         $manager.selection.select sel
         @selection = [sel]
@@ -1230,7 +1245,7 @@ class EditSketchTool < SketchTool
         @glview.redraw
       end
     else
-      $manager.selection.deselect_all
+      $manager.selection.deselect_all unless $manager.key_pressed? :Shift
       @selection = nil
     end
     @sketch.build_displaylist
@@ -1251,11 +1266,11 @@ class EditSketchTool < SketchTool
       if @selection and @selection.include? new_selection    
         @points_to_drag = @selection.map{|e| e.dynamic_points }.flatten.uniq
         @old_points = Marshal.load(Marshal.dump( @points_to_drag ))
-      elsif new_selection
+      elsif new_selection and not $manager.key_pressed? :Shift
         click_left( x,y )
         press_left( x,y )
       else
-        click_left( x,y )
+        #click_left( x,y )
       end
     end
   end

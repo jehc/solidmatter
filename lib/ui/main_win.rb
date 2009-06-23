@@ -248,8 +248,8 @@ class SolidMatterMainWin < Gtk::Window
     @main_vbox.pack_start(part_toolbar, false, false)
     part_toolbar.append( GetText._("Sketch"), "Sketch on selected plane","Toolbar/Sketch", Gtk::Image.new('../data/icons/middle/sketch_middle.png') ){$manager.project.new_sketch}
     part_toolbar.append( Gtk::SeparatorToolItem.new )
-    part_toolbar.append( GetText._("Extrude"), "Extrude sketch", "PartToolbar/Extrude", Gtk::Image.new('../data/icons/middle/extrude_middle.png') ){ $manager.add_operator('extrude')}
-    part_toolbar.append( GetText._("Revolve"), "Rotate a sketch around an axis to produce geometry", "PartToolbar/Revolve", Gtk::Image.new('../data/icons/middle/revolve_middle.png') ){}
+    part_toolbar.append( GetText._("Extrude"), "Extrude sketch", "PartToolbar/Extrude", Gtk::Image.new('../data/icons/middle/extrude_middle.png') ){ $manager.add_operator('extrude') }
+    part_toolbar.append( GetText._("Revolve"), "Rotate a sketch around an axis to produce geometry", "PartToolbar/Revolve", Gtk::Image.new('../data/icons/middle/revolve_middle.png') ){ $manager.add_operator('revolve') }
     part_toolbar.append( GetText._("Hole"), "Drill hole", "PartToolbar/Hole", Gtk::Image.new('../data/icons/hole.png') ){}
     part_toolbar.append( GetText._("Shell"), "Shell out solid", "PartToolbar/Shell", Gtk::Image.new('../data/icons/big/shell.png') ){}
     #part_toolbar.append( GetText._("Loft"), "Connect several sketches with a surface", "PartToolbar/Loft", Gtk::Image.new('../data/icons/big/loft.png') ){}

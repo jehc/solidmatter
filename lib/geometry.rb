@@ -79,7 +79,7 @@ class Segment
   end
   
   def bounding_box
-    bounding_box_from snap_points.map{|p| Tool.sketch2world(p, @sketch.plane) }
+    bounding_box_from snap_points.map{|p| Tool.sketch2world(p, @sketch.plane.plane) }
   end
   
   def cut_with segs
@@ -128,22 +128,6 @@ class Line < Segment
     @pos1 = start.dup
     @pos2 = ende.dup
   end
-=begin
-  def own_and_neighbooring_points
-    points = []
-    for seg in @sketch.segments
-      for pos in [seg.pos1, seg.pos2]
-        if [@pos1, @pos2].any?{|p| p.x == pos.x and p.y == pos.y and p.z == pos.z }
-          points.push pos
-        end
-      end
-    end
-    return points.uniq
-  end
-=end
-# def bounding_box
-#   return bounding_box_from [@pos1, @pos2]
-# end
 
   def midpoint
     (@pos1 + @pos2) / 2.0
@@ -175,6 +159,42 @@ class Line < Segment
   def +( vec )
     Line.new( @pos1 + vec, @pos2 + vec, @sketch )
   end
+  
+  def horizontal?
+    @pos1.y == @pos2.y
+  end
+  
+  def vertical?
+    @pos1.x == @pos2.y
+  end
+  
+  def orthogonal_to? other
+    case other
+    when Vector
+      @pos1.vector_to(@pos2).orthogonal_to? other
+    when Line
+      @pos1.vector_to(@pos2).orthogonal_to? other.pos1.vector_to(other.pos2)
+    end
+  end
+  
+  def parallel_to? other
+    case other
+    when Vector
+      @pos1.vector_to(@pos2).parallel_to? other
+    when Line
+      @pos1.vector_to(@pos2).parallel_to? other.pos1.vector_to(other.pos2)
+    end
+  end
+  
+  def offset_from parallel_line
+    raise "Lines are not parallel" unless parallel_to? parallel_line
+    parallel_line.pos1.distance_to( closest_point parallel_line.pos1 ) 
+  end
+  
+  def closest_point point
+    dir = @pos1.vector_to @pos2
+    @pos1 + dir * @pos1.vector_to(point).dot_product(dir)
+  end
 
   def dup
     copy = super
@@ -184,7 +204,7 @@ class Line < Segment
   end
 end
 
-class Arc < Segment
+class Arc2D < Segment
   attr_accessor :center, :radius, :start_angle, :end_angle, :points
   def initialize( center, radius, start_angle, end_angle, sketch=nil )
     super sketch
@@ -198,7 +218,7 @@ class Arc < Segment
   def point_at angle
     x = Math.cos( (angle/360.0) * 2*Math::PI ) * @radius + @center.x
     z = Math.sin( (angle/360.0) * 2*Math::PI ) * @radius + @center.z
-    return Vector[ x, @center.y, z ]
+    Vector[ x, @center.y, z ]
   end
   
   def pos1
@@ -256,6 +276,7 @@ class Arc < Segment
     tesselate #if @points.empty?
     GL.Begin( GL::LINE_STRIP )
       for p in @points
+        #p = @plane.plane2part p unless @sketch
         GL.Vertex( p.x, p.y, p.z )
       end
     GL.End
@@ -269,25 +290,25 @@ class Arc < Segment
   
   def dup
     copy = super
-    copy.center = @center.dup
+    copy.center = self.center.dup
     copy.points.clear
     copy
   end
 end
 
-class Circle < Arc
-  def initialize( center, radius, sketch=nil)
+class Circle2D < Arc2D
+  def initialize( center, radius, sketch)
     super center, radius, 0.0, 360.0, sketch
   end
   
-  def Circle::from3points( p1, p2, p3, sketch=nil )
+  def Circle2D::from3points( p1, p2, p3, sketch )
     
   end
   
-  def Circle::from_opposite_points( p1, p2, sketch=nil )
+  def Circle2D::from_opposite_points( p1, p2, sketch )
     center = p1 + (p1.vector_to(p2) / 2.0)
     radius = center.distance_to p1
-    Circle.new( center, radius, sketch)
+    Circle2D.new( center, radius, sketch)
   end
   
   def snap_points
@@ -295,6 +316,40 @@ class Circle < Arc
     super + quadrants
   end
 end
+
+
+class Arc3D < Arc2D
+  attr_accessor :plane
+  def initialize( plane, radius, start_angle, end_angle )
+    @plane = plane.dup
+    super( Vector[0,0,0], radius, start_angle, end_angle)
+  end
+  
+  def point_at angle
+    @plane.plane2part( super )
+  end
+  
+  def center
+    @plane.origin
+  end
+  
+  def center= c
+    @plane.origin = c.dup
+  end
+  
+  def dup
+    copy = super
+    copy.plane = @plane.dup
+    copy
+  end
+end
+
+class Circle3D < Arc3D
+  def initialize( plane, radius)
+    super plane, radius, 0.0, 360.0
+  end
+end
+
 
 class Spline < Segment
   attr_accessor :cvs, :degree
@@ -391,16 +446,16 @@ class Plane
     u_vec  = Vector[1.0, 0.0, 0.0]
     v_vec  = Vector[0.0, 0.0, 1.0]
     if p1 and p2 and p3
-      u_vec = origin.vector_to p2
-      v_vec = origin.vector_to p3
+      u_vec = origin.vector_to(p2).normalize
+      v_vec = origin.vector_to(p3).normalize
     end
     Plane.new(origin, u_vec, v_vec)
   end
   
   def initialize( o=nil, u=nil, v=nil )
     @origin = o ? o : Vector[0.0, 0.0, 0.0]
-    @u_vec  = u ? u : Vector[1.0, 0.0, 0.0]
-    @v_vec  = v ? v : Vector[0.0, 0.0, 1.0]
+    @u_vec  = u ? u.normalize : Vector[1.0, 0.0, 0.0]
+    @v_vec  = v ? v.normalize : Vector[0.0, 0.0, 1.0]
   end
   
   def normal_vector
@@ -421,10 +476,34 @@ class Plane
     return p - ( normal_vector * distance )
   end
   
+  def plane2part segment
+    case segment
+    when Line
+      Line.new( plane2part(segment.pos1), plane2part(segment.pos2))
+#    when Arc2D
+#      pl = Plane.new
+#      Arc3D.new( plane2part(segment.center), 
+#               segment.radius,
+#               segment.start_angle,
+#               segment.end_angle,
+#               segment.plane.dup || segment.sketch.plane.dup)
+    when Vector
+      @u_vec * segment.x + normal * segment.y + @v_vec * segment.z + @origin
+    end
+  end
+  
   def transform_like plane
       @origin = plane.origin
       @u_vec = plane.u_vec
       @v_vec = plane.v_vec
+  end
+  
+  def dup
+    copy = super
+    copy.origin = @origin.dup
+    copy.u_vec = @u_vec
+    copy.v_vec = @v_vec
+    copy
   end
 end
 

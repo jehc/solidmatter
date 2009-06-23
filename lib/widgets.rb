@@ -134,9 +134,9 @@ end
 
 
 class MeasureEntry < Gtk::VBox
-  def initialize( label=nil )
+  def initialize( label=nil, max_value=10 )
     super false
-    @entry = Gtk::SpinButton.new( 0, 10, 0.05 )
+    @entry = Gtk::SpinButton.new( 0, max_value, 0.05 )
     @entry.update_policy = Gtk::SpinButton::UPDATE_IF_VALID
     @entry.activates_default = true
     @btn = Gtk::Button.new

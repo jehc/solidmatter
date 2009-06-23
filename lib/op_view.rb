@@ -84,8 +84,10 @@ class OpView < Gtk::ScrolledWindow
     end
     @tv.signal_connect("cursor_changed") do |w|
       sel = self.selections.first 
-      $manager.select sel
-      draw_highlighted sel
+      unless sel.is_a? Operator or sel.is_a? Sketch
+        $manager.select sel
+        draw_highlighted sel
+      end
     end
   end
   

@@ -107,37 +107,35 @@ class PlanarFace < Face
 end
 
 class CircularFace < Face
-  def initialize( axis, radius, position, height, start_angle, end_angle )
+  def initialize( plane, radius, height, start_angle, end_angle )
     super()
-    @axis        = axis.normalize
+    @plane       = plane.dup
     @radius      = radius
-    @position    = position
     @height      = height
     @start_angle = start_angle
     @end_angle   = end_angle
     # build outlines
-    lower_arc = Arc.new( @position, @radius, start_angle, end_angle)
+    lower_arc = Arc3D.new( @plane, @radius, start_angle, end_angle )
+    puts lower_arc.center
     upper_arc = lower_arc.dup
-    upper_arc.center = @position + @axis * @height
-    lower_edge = lower_arc.tesselate
-    upper_edge = upper_arc.tesselate
+    upper_arc.center = @plane.origin + @plane.normal * @height
     borders = [ Line.new( lower_arc.pos1, upper_arc.pos1), Line.new( lower_arc.pos2, upper_arc.pos2) ]
     @segments =  [lower_arc, upper_arc] + borders
   end
   
   def draw
-    arc = Arc.new( @position, @radius, @start_angle, @end_angle )
+    arc = Arc3D.new( @plane, @radius, @start_angle, @end_angle )
     for line in arc.tesselate
       corner1 = line.pos1
-      corner2 = line.pos1 + @axis * @height
-      corner3 = line.pos2 + @axis * @height
+      corner2 = line.pos1 + @plane.normal * @height
+      corner3 = line.pos2 + @plane.normal * @height
       corner4 = line.pos2
       GL.Begin( GL::POLYGON )
-        normal = @position.vector_to( line.pos1 ).normalize
+        normal = @plane.origin.vector_to( line.pos1 ).normalize
         GL.Normal( normal.x, normal.y, normal.z )
         GL.Vertex( corner1.x, corner1.y, corner1.z )
         GL.Vertex( corner2.x, corner2.y, corner2.z )
-        normal = @position.vector_to( line.pos2 ).normalize
+        normal = @plane.origin.vector_to( line.pos2 ).normalize
         GL.Normal( normal.x, normal.y, normal.z )
         GL.Vertex( corner3.x, corner3.y, corner3.z )
         GL.Vertex( corner4.x, corner4.y, corner4.z )
@@ -147,11 +145,11 @@ class CircularFace < Face
   
   def tesselate
     tris = []
-    arc = Arc.new( @position, @radius, @start_angle, @end_angle )
+    arc = Arc3D.new( @plane, @radius, @start_angle, @end_angle )
     for line in arc.tesselate
       corner1 = line.pos1
-      corner2 = line.pos1 + @axis * @height
-      corner3 = line.pos2 + @axis * @height
+      corner2 = line.pos1 + @plane.normal * @height
+      corner3 = line.pos2 + @plane.normal * @height
       corner4 = line.pos2
       tri1 = [corner1, corner2, corner3]
       tri2 = [corner3, corner4, corner1]

@@ -124,6 +124,14 @@ class Vector
    Vector[ 0, self[1], self[2] ]
   end
   
+  def orthogonal_to? other
+    dot_product(other).nearly_equals 0
+  end
+  
+  def parallel_to? other
+    cross_product(other).length.nearly_equals 0
+  end
+  
   def dup
     copy = super
     copy.elements = @elements.dup

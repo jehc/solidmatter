@@ -745,7 +745,7 @@ class GLView < Gtk::DrawingArea
         recurse_draw $manager.work_sketch if $manager.work_sketch
       ### ------------------------- Sketch ------------------------- ###
       elsif top_comp.class == Sketch
-        GL.Translate( top_comp.plane.origin.x, top_comp.plane.origin.y, top_comp.plane.origin.z )
+        GL.Translate( top_comp.plane.plane.origin.x, top_comp.plane.plane.origin.y, top_comp.plane.plane.origin.z )
         GL.Disable(GL::LIGHTING)
         if @selection_pass
           top_comp.selection_pass = true
@@ -760,7 +760,7 @@ class GLView < Gtk::DrawingArea
         end
       ### ---------------------- Working plane ---------------------- ###
       elsif top_comp.class == WorkingPlane
-        GL.Translate( top_comp.origin.x, top_comp.origin.y, top_comp.origin.z )
+        GL.Translate( top_comp.plane.origin.x, top_comp.plane.origin.y, top_comp.plane.origin.z )
         GL.Disable(GL::LIGHTING)
         c = top_comp.selection_pass_color
         GL.Color3f( c[0],c[1],c[2] ) if c
@@ -806,7 +806,7 @@ class GLView < Gtk::DrawingArea
       pos = GLU.UnProject( x, y, z, modelview, projection, viewport )
       pos = Vector[ pos[0], pos[1], pos[2] ]
       # resolution of the depth buffer is low, so we correct the point position
-      pos = $manager.work_sketch.plane.closest_point pos if $manager.work_sketch
+      pos = $manager.work_sketch.plane.plane.closest_point pos if $manager.work_sketch
     else
       pos = nil
     end

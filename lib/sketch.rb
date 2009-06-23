@@ -10,18 +10,13 @@ require 'units.rb'
 Glut.glutInit
 
 
-class WorkingPlane < Plane
+class WorkingPlane
   include Selectable
   attr_reader :plane, :parent
   attr_accessor :size, :spacing, :visible, :displaylist, :pick_displaylist
-  def initialize( parent, plane=nil )
-    if plane
-      @origin = plane.origin
-      @u_vec = plane.u_vec
-      @v_vec = plane.v_vec
-    else
-      super()
-    end
+  def initialize( parent, plane=Plane.new )
+    raise ArgumentError if plane.is_a? WorkingPlane
+    @plane = plane
     @displaylist = $manager.glview.add_displaylist
     @pick_displaylist = $manager.glview.add_displaylist
     @selection_pass_color = [1.0, 1.0, 1.0]
@@ -73,16 +68,16 @@ class WorkingPlane < Plane
     @verticals = []
     @horizontals = []
     (-half_size).step(half_size, @spacing) do |shift|
-      # go from left to right and create vertical lines
-      u_pos   = @u_vec * shift
-      u_upper = u_pos + @v_vec * half_size
-      u_lower = u_pos - @v_vec * half_size
+      # go from left to right and create vertical lines 
+      u_pos   = @plane.u_vec * shift
+      u_upper = u_pos + @plane.v_vec * half_size
+      u_lower = u_pos - @plane.v_vec * half_size
       v_line  = Line.new( u_upper, u_lower )
       @verticals.push v_line
       # go up from below and create horizontal lines
-      v_pos   = @v_vec * shift
-      v_left  = v_pos - @u_vec * half_size
-      v_right = v_pos + @u_vec * half_size
+      v_pos   = @plane.v_vec * shift
+      v_left  = v_pos - @plane.u_vec * half_size
+      v_right = v_pos + @plane.u_vec * half_size
       u_line  = Line.new( v_left, v_right )
       @horizontals.push u_line
     end
@@ -103,10 +98,10 @@ class WorkingPlane < Plane
       GL.End
     GL.EndList
     # create pick displaylist
-    upper_left  = @v_vec * half_size - @u_vec * half_size
-    upper_right = @v_vec * half_size + @u_vec * half_size
-    lower_right = @v_vec * (-half_size) + @u_vec * half_size
-    lower_left  = @v_vec * (-half_size) - @u_vec * half_size
+    upper_left  = @plane.v_vec * half_size - @plane.u_vec * half_size
+    upper_right = @plane.v_vec * half_size + @plane.u_vec * half_size
+    lower_right = @plane.v_vec * (-half_size) + @plane.u_vec * half_size
+    lower_left  = @plane.v_vec * (-half_size) - @plane.u_vec * half_size
     GL.NewList( @pick_displaylist, GL::COMPILE )
       GL.Begin( GL::POLYGON )
         GL.Vertex( upper_left.x, upper_left.y, upper_left.z )
@@ -119,8 +114,8 @@ class WorkingPlane < Plane
   
   def dup
     copy = super
-    copy.displaylist = glview.add_displaylist
-    copy.pick_displaylist = glview.add_displaylist
+    copy.displaylist = $manager.glview.add_displaylist
+    copy.pick_displaylist = $manager.glview.add_displaylist
     copy.build_displaylists
     copy
   end
@@ -268,7 +263,7 @@ class Sketch
     solid ||= @parent.solid if @parent and @parent.solid
     if solid and @plane_id
       new_plane = solid.faces.map{|f| (f.is_a? PlanarFace) ? f.plane : nil }.compact[@plane_id]
-      @plane.transform_like new_plane if new_plane
+      @plane.plane.transform_like new_plane if new_plane
     end
   end
 =begin
@@ -385,7 +380,7 @@ class SketchConstraint
       GL.Disable( GL::LIGHTING )
       w = 0.03
       d = 0.03
-      pos = Tool.sketch2world( @tex_pos, @sketch.plane )
+      pos = Tool.sketch2world( @tex_pos, @sketch.plane.plane )
       GL.Begin( GL::QUADS )
         glTexCoord2f(1.0, 0.0)
         GL.Vertex( pos.x - w, pos.y, pos.z + d )
@@ -618,7 +613,7 @@ class RadialDimension < Dimension
     pos3 = @arc.center + (@direction * @arc.radius)
     pos2 = @arc.center + (@direction * (@arc.radius + $preferences[:dimension_offset]))
     pos1 = Vector[pos2.x + $preferences[:dimension_offset], pos2.y, pos2.z]
-    pl = @sketch.plane
+    pl = @sketch.plane.plane
     Dimension.draw_arrow [Tool.sketch2world(pos1, pl), Tool.sketch2world(pos2, pl), Tool.sketch2world(pos3, pl)]
     Dimension.draw_text( "R#{enunit @arc.radius}", Tool.sketch2world(pos1, pl) )
   end
@@ -676,7 +671,7 @@ class HorizontalDimension < Dimension
   
   def draw
     super
-    pl = @sketch.plane
+    pl = @sketch.plane.plane
     p1 = Tool.sketch2world(@line.pos1, pl)
     p2 = Tool.sketch2world(@line.pos2, pl)
     left  = [p1.x, p2.x].min
@@ -754,7 +749,7 @@ class VerticalDimension < Dimension
   
   def draw
     super
-    pl = @sketch.plane
+    pl = @sketch.plane.plane
     p1 = Tool.sketch2world(@line.pos1, pl)
     p2 = Tool.sketch2world(@line.pos2, pl)
     left  = [p1.x, p2.x].min
@@ -828,7 +823,7 @@ class LengthDimension < Dimension
   
   def draw
     super
-    pl = @sketch.plane
+    pl = @sketch.plane.plane
     p1 = Tool.sketch2world(@p1, pl)
     p2 = Tool.sketch2world(@p2, pl)
     left  = [p1.x, p2.x].min

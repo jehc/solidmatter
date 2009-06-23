@@ -84,14 +84,15 @@ class Manager
     @keys_pressed = []
     @point_snap = true
     @grid_snap = false
-    @use_sketch_guides = false
-    @use_auto_constrain = true
+    @use_sketch_guides = true
+    @use_auto_constrain = false
     @keymap = { 65505 => :Shift,
                 65507 => :Ctrl,
                 65406 => :Alt,
                 65307 => :Esc,
                 65288 => :Backspace,
-                65535 => :Del}  
+                65535 => :Del}
+    @key_release_handlers = {}
     new_project
   end
   
@@ -129,6 +130,8 @@ public
       @client = nil
       @selection = Selection.new
       @glview.ground.clean_up if @not_starting_up
+      assembly_toolbar
+      @op_view_controls.hide
       @project = Project.new
       @work_component = @project.main_assembly
       @work_sketch = nil
@@ -197,7 +200,7 @@ public
         dia.destroy
         begin
           @project = Project.load filename
-          change_working_level @project.main_assembly 
+          change_working_level @project.main_assembly
           self.has_been_changed = false
           @project.rebuild
           @project.all_parts.each{|p| p.build } #XXX this shouldn't really be needed
@@ -561,7 +564,6 @@ public
   end
   
   def key_pressed( key )
-    #puts key
     @keys_pressed.push key
     activate_tool( "camera", true ) if @keymap[key] == :Ctrl
     cancel_current_tool             if @keymap[key] == :Esc
@@ -572,6 +574,15 @@ public
   def key_released( key )
     @keys_pressed.delete key
     cancel_current_tool if @keymap[key] == :Ctrl
+    return unless @key_release_handlers[@keymap[key]]
+    for handler in @key_release_handlers[@keymap[key]].dup
+      @key_release_handlers[@keymap[key]].delete handler unless handler.call
+    end
+  end
+  
+  def on_key_released( key, &block )
+    @key_release_handlers[key] ||= []
+    @key_release_handlers[key] << block
   end
   
   def key_pressed? name

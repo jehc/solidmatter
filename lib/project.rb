@@ -185,7 +185,7 @@ class Project
     elsif inst.is_a? Segment and $manager.work_sketch
       $manager.work_sketch.segments.push inst
       $manager.work_sketch.build_displaylist
-      $manager.glview.rebuild_selection_pass_colors :select_segments_and_dimensions
+      $manager.glview.rebuild_selection_pass_colors [:segments, :dimensions]
     end
     $manager.glview.redraw
   end
