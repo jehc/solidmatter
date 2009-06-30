@@ -145,8 +145,12 @@ class Line < Segment
     [self]
   end
   
+  def to_vec
+    @pos1.vector_to(@pos2)
+  end
+  
   def length
-    @pos1.vector_to(@pos2).length
+    to_vec.length
   end
 
   def draw
@@ -171,18 +175,18 @@ class Line < Segment
   def orthogonal_to? other
     case other
     when Vector
-      @pos1.vector_to(@pos2).orthogonal_to? other
+      self.to_vec.orthogonal_to? other
     when Line
-      @pos1.vector_to(@pos2).orthogonal_to? other.pos1.vector_to(other.pos2)
+      self.to_vec.orthogonal_to? other.to_vec
     end
   end
   
   def parallel_to? other
     case other
     when Vector
-      @pos1.vector_to(@pos2).parallel_to? other
+      self.to_vec.parallel_to? other
     when Line
-      @pos1.vector_to(@pos2).parallel_to? other.pos1.vector_to(other.pos2)
+      self.to_vec.parallel_to? other.to_vec
     end
   end
   
@@ -192,8 +196,77 @@ class Line < Segment
   end
   
   def closest_point point
-    dir = @pos1.vector_to @pos2
+    dir = to_vec
     @pos1 + dir * @pos1.vector_to(point).dot_product(dir)
+  end
+  
+  def touches?( p, with_endpoints=false )
+    # check if on infinite line
+    #return false unless closest_point(p).near_to p
+    # check if within bounds
+    l = length
+    if with_endpoints
+      @pos1.distance_to(p) <= l and 
+      @pos2.distance_to(p) <= l
+    else
+      @pos1.distance_to(p) < l and 
+      @pos2.distance_to(p) < l
+    end
+  end
+  
+  def intersection_with other
+    return if parallel_to? other or self.to_vec.normalize.near_to other.to_vec.normalize
+    #XXX in 3d we need to check if distance to other is zero as well
+    d = self.to_vec
+    e = other.to_vec
+    n = d.cross_product e
+    sr = @pos1.vector_to other.pos1
+    if n.z.abs > n.x.abs and n.z.abs > n.y.abs
+      t = (sr.x * e.y - rs.y * e.x) / n.z
+      u = (sr.x * d.y - rs.y * d.x) / n.z
+    elsif n.x.abs > n.y.abs
+      t = (sr.y * e.z - rs.z * e.y) / n.x
+      u = (sr.y * d.z - rs.z * d.y) / n.x
+    else
+      t = (sr.z * e.x - sr.x * e.z) / n.y
+      u = (sr.z * d.x - sr.x * d.z) / n.y
+    end
+    p = @pos1 + d * t
+    # check if p lies on both segments
+    for seg in [self, other]
+      puts "in int with other"
+      return unless seg.touches?( p, true )
+    end
+    p
+  end
+  
+  def cut_at points
+    case points
+    when Array
+      cut_segments = [self]
+      changed = true
+      while changed
+        changed = false
+        for p in points
+          cut_segments.each_with_index do |seg,i|
+            puts " in cut at pionts"
+            if seg.touches? p
+              cut_segments[i] = seg.cut_at(p)
+              changed = true
+            end
+          end
+          cut_segments.flatten!
+          cut_segments.compact!
+        end
+      end
+      return cut_segments
+    when Vector
+      p = points
+      cpy1, cpy2 = dup, dup
+      cpy1.pos1 = p
+      cpy2.pos2 = p
+      return [cpy1, cpy2]
+    end
   end
 
   def dup

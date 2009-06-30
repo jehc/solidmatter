@@ -1353,48 +1353,55 @@ class TrimTool < SketchTool
   def initialize sketch
     super( GetText._("Click left to delete subsegments of your sketch:"), sketch )
     @does_snap = false
-    save_real_segments
-  end
-  
-  def save_real_segments
-    # replace sketch segments with precut versions
-    @old_segments = @sketch.segments
-    @mapper = {}
-    cut_segments = @sketch.segments.inject([]) do |all_cut, seg| 
-      cut_segs = seg.cut_with( @sketch.segments - [seg] )
-      cut_segs.each{|cs| @mapper[cs.object_id] = seg }
-      all_cut += cut_segs
-    end
-    @sketch.segments = cut_segments
-    @sketch.build_displaylist
   end
   
   def mouse_move( x,y )
     super
     if sel = @glview.select( x,y )
-      $manager.selection.select sel
-    else
-      $manager.selection.deselect_all
+      # generate intersection points all other segs in the sketch
+      @intersections = []
+      for s in @sketch.segments
+        if p = sel.intersection_with(s)
+          @intersections << p
+        end
+      end
+      unless @intersections.empty?
+        cut_segments = sel.cut_at @intersections
+        # check which sub-segment to cut away
+        click_point = world2sketch( @glview.screen2world(x,y) )
+        @cut_seg = cut_segments.min_by{|s| s.midpoint.distance_to click_point }
+        # create the remaining parts of the segment
+        remains = sel.cut_at [@cut_seg.pos1, @cut_seg.pos2]
+        remains.reject!{|s| s.midpoint == @cut_seg.midpoint }
+        @replacement = [sel, remains]
+        @glview.redraw
+        return
+      end
     end
+    @cut_seg, @replacement = nil, nil
     @glview.redraw
   end
   
   def click_left( x,y )
     super
-    if sel = @glview.select( x,y )
-      real_seg = @mapper[sel.object_id]
-      new_segs = real_seg.trim_between( sel.pos1, sel.pos2 )
-      @old_segments.delete real_seg
-      @sketch.segments = @old_segments + new_segs
-      save_real_segments
-    end
+    mouse_move( x,y )
+    return unless @replacement
+    @sketch.segments.delete @replacement.first
+    @sketch.segments += @replacement.last
+    #XXX correct constraints
+    @glview.rebuild_selection_pass_colors [:segments]
+    @sketch.build_displaylist
+    @cut_seg, @replacement = nil, nil
+    @glview.redraw
   end
   
-  def exit
+  def draw
     super
-    # restore sketch with original segments
-    @sketch.segments = @old_segments
-    @sketch.build_displaylist
+    return unless @cut_seg
+    GL.Disable(GL::DEPTH_TEST)
+    GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
+    GL.LineWidth(12)
+    @cut_seg.draw
   end
 end
 
