@@ -85,36 +85,12 @@ class ExtrudeOperator < Operator
   
   def fill_toolbar bar
     # sketch selection
-    sketch_button = Gtk::ToggleToolButton.new
-    sketch_button.icon_widget = Gtk::Image.new('../data/icons/middle/sketch_middle.png').show
-    sketch_button.label = GetText._("Sketch")
-    sketch_button.signal_connect("clicked") do |b| 
-      if sketch_button.active?
-        $manager.activate_tool("region_select", true) do |loops|
-          unless loops.empty?
-            @settings[:loops] = loops
-            sketch = loops.first.first.sketch
-            if @settings[:sketch]
-              @part.unused_sketches.push @settings[:sketch]
-              @settings[:sketch].op = nil
-            end
-            @settings[:sketch] = sketch
-            sketch.op = self
-            @part.unused_sketches.delete sketch
-            $manager.op_view.update
-            show_changes
-          end
-          sketch_button.active = false
-        end
-        $manager.current_tool.selection = @settings[:loops] || []
-      end
-    end
-    bar.append( sketch_button )
+    bar.append RegionButton.new self
     #bar.append SelectionView.new GetText._("Selection")
-    bar.append( Gtk::SeparatorToolItem.new )
+    bar.append Gtk::SeparatorToolItem.new
     # type button
     type_button = Gtk::ToolButton.new( Gtk::Image.new('../data/icons/tools.png'), GetText._("Type") )
-    bar.append( type_button )
+    bar.append type_button
     type_button.signal_connect("clicked") do |b| 
       if @settings[:type] == :add
         @settings[:type] = :subtract
@@ -226,51 +202,56 @@ class RevolveOperator < Operator
   
   def real_operate
     @new_faces = []
-    segments = @settings[:segments]
+    loops = @settings[:loops]
     axis = @settings[:axis]
-    if segments and axis and @solid
-      # take the most appropriate chain from the sketch
-      sketch = segments.first.sketch
-      segments = sketch.all_chains.select{|ch| segments.any?{|s| ch.include? s } }.first
-      if not segments
+    if axis and @solid and loops and not loops.empty?
+      # some segments of the defining regions might have changed, so we refresh the loops
+      sketch = loops.first.first.sketch
+      loops = sketch.all_chains.select do |ch| 
+        loops.any?{|l| l.any?{|seg| ch.include? seg } }
+      end
+      if loops.empty?
         @solid = nil
         return []
       end
-      @settings[:segments] = segments
+      @settings[:loops] = loops
       # make sure we are in part coordinate space
-      sketch = segments.first.sketch
-      origin = sketch.plane.plane.origin
-      segments.each do |seg|
-        case seg
-        when Line
-          puts "processing line"
-          if seg.parallel_to? axis
-            puts "found parallel"
-            radius = seg.offset_from axis
-            plane = Plane.new
-            plane.origin = sketch.plane.plane.plane2part( axis.closest_point(seg.pos1) )
-            plane.u_vec = sketch.plane.plane.normal
-            plane.v_vec = plane.u_vec.cross_product( axis.pos1.vector_to(axis.pos2).normalize )
-            face = CircularFace.new( plane, 
-                                     radius, 
-                                     seg.length, 
-                                     0.0, @settings[:angle] )
-          elsif seg.orthogonal_to? axis
-            puts "found perpendicular"
-            face = PlanarFace.new
-            #center = [seg.pos1, seg.pos2].min_by{|p| p.distance_to axis.closest_point(p) }
-            center = axis.closest_point(seg.pos1)
-            radius = [seg.pos1, seg.pos2].map{|p| p.distance_to center }.max
-            face.plane.u_vec = sketch.plane.plane.normal
-            face.plane.v_vec = face.plane.u_vec.cross_product( axis.pos1.vector_to(axis.pos2).normalize )
-            face.plane.origin = sketch.plane.plane.plane2part center
-            face.segments = [Circle3D.new( face.plane, radius )]
+      #origin = sketch.plane.plane.origin
+      for loop in loops
+        for seg in loop
+          next if seg == axis
+          case seg
+          when Line
+            puts "processing line"
+            if seg.parallel_to? axis
+              puts "found parallel"
+              radius = seg.offset_from axis
+              puts "radius #{radius}"
+              plane = Plane.new
+              plane.origin = sketch.plane.plane.plane2part( axis.closest_point(seg.pos1) )
+              plane.u_vec = sketch.plane.plane.normal
+              plane.v_vec = plane.u_vec.cross_product( axis.to_vec.normalize ).invert
+              face = CircularFace.new( plane, 
+                                       radius, 
+                                       seg.length, 
+                                       0.0, @settings[:angle] )
+            elsif seg.orthogonal_to? axis
+              puts "found perpendicular"
+              face = PlanarFace.new
+              #center = [seg.pos1, seg.pos2].min_by{|p| p.distance_to axis.closest_point(p) }
+              center = axis.closest_point(seg.pos1)
+              radius = [seg.pos1, seg.pos2].map{|p| p.distance_to center }.max
+              face.plane.u_vec = sketch.plane.plane.normal
+              face.plane.v_vec = face.plane.u_vec.cross_product( axis.pos1.vector_to(axis.pos2).normalize )
+              face.plane.origin = sketch.plane.plane.plane2part center
+              face.segments = [Circle3D.new( face.plane, radius )]
+            end
           end
-        end
-        if face
-          puts "adding face"
-          @solid.add_face face
-          @new_faces << face
+          if face
+            puts "adding face"
+            @solid.add_face face
+            @new_faces << face
+          end
         end
       end
     end
@@ -279,31 +260,8 @@ class RevolveOperator < Operator
   
   def fill_toolbar bar
     # sketch selection
-    sketch_button = Gtk::ToggleToolButton.new
-    sketch_button.icon_widget = Gtk::Image.new('../data/icons/middle/sketch_middle.png').show
-    sketch_button.label = GetText._("Sketch")
-    sketch_button.signal_connect("clicked") do |b| 
-      if sketch_button.active?
-        $manager.activate_tool("region_select", true) do |segments|
-          if segments
-            @settings[:segments] = segments
-            sketch = segments.first.sketch
-            if @settings[:sketch]
-              @part.unused_sketches.push @settings[:sketch]
-              @settings[:sketch].op = nil
-            end
-            @settings[:sketch] = sketch
-            sketch.op = self
-            @part.unused_sketches.delete sketch
-            $manager.op_view.update
-            show_changes
-          end
-          sketch_button.active = false
-        end
-      end
-    end
-    bar.append( sketch_button )
-    bar.append( Gtk::SeparatorToolItem.new )
+    bar.append RegionButton.new self
+    bar.append Gtk::SeparatorToolItem.new
     # axis selection
     axis_button = Gtk::ToggleToolButton.new
     axis_button.icon_widget = Gtk::Image.new('../data/icons/middle/sketch_middle.png').show

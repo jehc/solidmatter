@@ -370,15 +370,15 @@ class Operator
     @settings = @save_settings
     ok
   end
+
+  def show_changes
+    @part.build self
+    $manager.glview.redraw 
+  end
   
 private
   def fill_toolbar 
     raise "Error in #{self} : Operator#fill_toolbar must be overriden by child class"
-  end
-  
-  def show_changes
-    @part.build self
-    $manager.glview.redraw 
   end
 end
 

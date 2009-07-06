@@ -340,8 +340,7 @@ class RegionSelectionTool < SelectionTool
       sketch.plane.visible = true
       sel = @glview.select(x,y, [:planes])
       sketch.plane.visible = false
-      if sel
-        pos = pos_of( x,y, sel )
+      if sel and pos = pos_of( x,y, sel )
         @current_region = @regions.select{|r| r.face.plane == sel.plane and r.poly.contains? Point.new( pos.x, pos.z ) }.first
         @glview.redraw
         break if @current_region
@@ -809,19 +808,6 @@ class SketchTool < Tool
     end
     GL.Enable(GL::DEPTH_TEST)
     # draw additional temporary geometry
-    #XXX segs should draw themselves
-    #for seg in @temp_segments
-    #  for micro_seg in seg.tesselate
-    #   GL.LineWidth(2)
-    #   GL.Color3f(1,1,1)
-    #   GL.Begin( GL::LINES )
-    #     pos1 = sketch2world( micro_seg.pos1 )
-    #     pos2 = sketch2world( micro_seg.pos2 )
-    #     GL.Vertex( pos1.x, pos1.y, pos1.z )
-    #     GL.Vertex( pos2.x, pos2.y, pos2.z )
-    #   GL.End
-    #  end
-    #end
     for seg in @temp_segments
       GL.LineWidth(2)
       GL.Color3f(1,1,1)
@@ -1229,6 +1215,7 @@ class EditSketchTool < SketchTool
     super( GetText._("Click left to select points, drag to move points, right click for options:"), sketch )
     @does_snap = false
     @points_to_drag = []
+    @no_depth = true
   end
   
   def click_left( x,y )
@@ -1361,6 +1348,7 @@ class TrimTool < SketchTool
   def initialize sketch
     super( GetText._("Click left to delete subsegments of your sketch:"), sketch )
     @does_snap = false
+    @no_depth = true
   end
   
   def mouse_move( x,y )
@@ -1404,7 +1392,6 @@ class TrimTool < SketchTool
   def draw
     super
     return unless @cut_seg
-    GL.Disable(GL::DEPTH_TEST)
     GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
     GL.LineWidth(12)
     @cut_seg.draw

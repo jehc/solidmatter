@@ -275,4 +275,34 @@ class SelectionView < Gtk::TreeView
 end
 
 
-
+class RegionButton < Gtk::ToggleToolButton
+  def initialize op
+    super()
+    self.icon_widget = Gtk::Image.new('../data/icons/middle/sketch_middle.png').show
+    self.label = GetText._("Sketch")
+    self.signal_connect("clicked") do |b| 
+      if self.active?
+        $manager.activate_tool("region_select", true) do |loops|
+          unless loops.empty?
+            op.settings[:loops] = loops
+            sketch = loops.first.first.sketch
+            if op.settings[:sketch]
+              op.part.unused_sketches.push op.settings[:sketch]
+              op.settings[:sketch].op = nil
+            end
+            op.settings[:sketch] = sketch
+            sketch.op = op
+            op.part.unused_sketches.delete sketch
+            $manager.op_view.update
+            op.show_changes
+          end
+          self.active = false
+        end
+        $manager.current_tool.selection = op.settings[:loops] || []
+        $manager.glview.redraw
+      else
+        $manager.cancel_current_tool
+      end
+    end
+  end
+end

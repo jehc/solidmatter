@@ -84,18 +84,14 @@ class Segment
   
   def cut_at points
     cut_segments = [self]
-    changed = true
-    while changed
-      changed = false
-      for p in points
-        cut_segments.each_with_index do |seg,i|
-          if seg.touches? p
-            cut_segments[i] = seg.cut_at_point(p)
-            changed = true
-          end
+    for p in points
+      cut_segments.each_with_index do |seg,i|
+        if seg.touches? p
+          cut_segments[i] = seg.cut_at_point(p)
+          cut_segments.flatten!
+          cut_segments.compact!
+          retry
         end
-        cut_segments.flatten!
-        cut_segments.compact!
       end
     end
     cut_segments
@@ -207,13 +203,13 @@ class Line < Segment
   end
   
   def closest_point point
-    dir = to_vec
+    dir = to_vec.normalize
     @pos1 + dir * @pos1.vector_to(point).dot_product(dir)
   end
   
   def touches?( p, with_endpoints=false )
     # check if on infinite line
-    #return false unless closest_point(p).near_to p
+    return false unless closest_point(p).near_to p
     # check if within bounds
     l = length
     if with_endpoints
