@@ -322,7 +322,11 @@ class RegionSelectionTool < SelectionTool
     mouse_move( x,y )
     if @current_region
       if $manager.key_pressed? :Shift
-        @selection.push @current_region.chain
+        if @selection.include? @current_region.chain
+          @selection.delete @current_region.chain
+        else
+          @selection.push @current_region.chain
+        end
       else
         @selection = [@current_region.chain]
         $manager.cancel_current_tool
@@ -1358,12 +1362,10 @@ class TrimTool < SketchTool
   def mouse_move( x,y )
     super
     if sel = @glview.select( x,y )
-      # generate intersection points all other segs in the sketch
+      # generate intersection points with all other segs in the sketch
       @intersections = []
-      for s in @sketch.segments
-        if p = sel.intersection_with(s)
-          @intersections << p
-        end
+      for s in @sketch.segments - [sel]
+        @intersections += sel.intersections_with(s)
       end
       unless @intersections.empty?
         cut_segments = sel.cut_at @intersections
@@ -1402,6 +1404,9 @@ class TrimTool < SketchTool
     GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
     GL.LineWidth(12)
     @cut_seg.draw
+    for i in @intersections
+      i.draw
+    end
   end
 end
 

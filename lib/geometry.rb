@@ -82,12 +82,23 @@ class Segment
     bounding_box_from snap_points.map{|p| Tool.sketch2world(p, @sketch.plane.plane) }
   end
   
-  def cut_with segs
-    [self]
-  end
-  
-  def trim_between( p1, p2 )
-    [self]
+  def cut_at points
+    cut_segments = [self]
+    changed = true
+    while changed
+      changed = false
+      for p in points
+        cut_segments.each_with_index do |seg,i|
+          if seg.touches? p
+            cut_segments[i] = seg.cut_at_point(p)
+            changed = true
+          end
+        end
+        cut_segments.flatten!
+        cut_segments.compact!
+      end
+    end
+    cut_segments
   end
   
   def +( vec )
@@ -214,59 +225,42 @@ class Line < Segment
     end
   end
   
-  def intersection_with other
-    return if parallel_to? other or self.to_vec.normalize.near_to other.to_vec.normalize
-    #XXX in 3d we need to check if distance to other is zero as well
-    d = self.to_vec
-    e = other.to_vec
-    n = d.cross_product e
-    sr = @pos1.vector_to other.pos1
-    if n.z.abs > n.x.abs and n.z.abs > n.y.abs
-      t = (sr.x * e.y - rs.y * e.x) / n.z
-      u = (sr.x * d.y - rs.y * d.x) / n.z
-    elsif n.x.abs > n.y.abs
-      t = (sr.y * e.z - rs.z * e.y) / n.x
-      u = (sr.y * d.z - rs.z * d.y) / n.x
-    else
-      t = (sr.z * e.x - sr.x * e.z) / n.y
-      u = (sr.z * d.x - sr.x * d.z) / n.y
+  def intersections_with other
+    case other
+    when Line
+      return [] if parallel_to? other
+      #XXX in 3d we need to check if distance to other is zero as well
+      d = self.to_vec
+      e = other.to_vec
+      n = d.cross_product e
+      sr = @pos1.vector_to other.pos1
+      if n.z.abs > n.x.abs and n.z.abs > n.y.abs
+        t = (sr.x * e.y - rs.y * e.x) / n.z
+        u = (sr.x * d.y - rs.y * d.x) / n.z
+      elsif n.x.abs > n.y.abs
+        t = (sr.y * e.z - rs.z * e.y) / n.x
+        u = (sr.y * d.z - rs.z * d.y) / n.x
+      else
+        t = (sr.z * e.x - sr.x * e.z) / n.y
+        u = (sr.z * d.x - sr.x * d.z) / n.y
+      end
+      p = @pos1 + d * t
+      # check if p lies on both segments
+      for seg in [self, other]
+        return [] unless seg.touches?( p, true )
+      end
+      [p]
+    when Arc2D
+      puts "Delegating to arc"
+      other.intersections_with self
     end
-    p = @pos1 + d * t
-    # check if p lies on both segments
-    for seg in [self, other]
-      puts "in int with other"
-      return unless seg.touches?( p, true )
-    end
-    p
   end
   
-  def cut_at points
-    case points
-    when Array
-      cut_segments = [self]
-      changed = true
-      while changed
-        changed = false
-        for p in points
-          cut_segments.each_with_index do |seg,i|
-            puts " in cut at pionts"
-            if seg.touches? p
-              cut_segments[i] = seg.cut_at(p)
-              changed = true
-            end
-          end
-          cut_segments.flatten!
-          cut_segments.compact!
-        end
-      end
-      return cut_segments
-    when Vector
-      p = points
-      cpy1, cpy2 = dup, dup
-      cpy1.pos1 = p
-      cpy2.pos2 = p
-      return [cpy1, cpy2]
-    end
+  def cut_at_point p
+    cpy1, cpy2 = dup, dup
+    cpy1.pos1 = p
+    cpy2.pos2 = p
+    [cpy1, cpy2]
   end
 
   def dup
@@ -294,6 +288,11 @@ class Arc2D < Segment
     Vector[ x, @center.y, z ]
   end
   
+  def angle_of p
+    p = closest_point p
+    Math.acos((p.x - @center.x) / @radius) / (2 * Math::PI) * 360
+  end
+  
   def pos1
     point_at @start_angle
   end
@@ -302,25 +301,89 @@ class Arc2D < Segment
     point_at @end_angle
   end
   
-  def own_and_neighbooring_points
-    points = []
-    for seg in @sketch.segments
-      for pos in [seg.pos1, seg.pos2]
-        if [pos1, pos2].any?{|p| p.x == pos.x and p.y == pos.y and p.z == pos.z }
-          points.push pos
-        end
-      end
-    end
-    points.push @center
-    return points.uniq
-  end
+#  def own_and_neighbooring_points
+#    points = []
+#    for seg in @sketch.segments
+#      for pos in [seg.pos1, seg.pos2]
+#        if [pos1, pos2].any?{|p| p.x == pos.x and p.y == pos.y and p.z == pos.z }
+#          points.push pos
+#        end
+#      end
+#    end
+#    points.push @center
+#    return points.uniq
+#  end
 
   def snap_points
-    super + [pos1, pos2, @center]
+    super + [pos1, pos2, midpoint, @center]
+  end
+  
+  def midpoint
+    point_at( (@start_angle + @end_angle) / 2.0 )
   end
   
   def dynamic_points
     [@center]
+  end
+  
+  def closest_point p
+    @center + @center.vector_to( p ).normalize * @radius
+  end
+  
+  def touches?( p, with_endpoints=false )
+    on_circle = @center.distance_to( p ).nearly_equals @radius
+    return false unless on_circle
+    a = angle_of p
+    if with_endpoints
+      a >= @start_angle and a <= @end_angle
+    else
+      a > @start_angle and a < @end_angle
+    end
+  end
+  
+  def tangent? line
+    self.touches? line.closest_point @center
+  end
+  
+  def intersections_with line
+    cp = line.closest_point @center
+    if tangent? line
+      puts "returning exactly one solution"
+      [cp]
+#    elsif @center.distance_to( cp ) > @radius+0.5
+#      puts "no solution"
+#      []
+    else
+      p1, p2 = line.pos1 - @center, line.pos2 - @center
+      d = line.to_vec
+      l = d.length
+      f = p1.x * p2.z - p2.x * p1.z
+      sgn = (d.z < 0  ?  -1 : 1)
+      delta = @radius**2 * l**2 - f**2
+      if delta < 0
+        puts "no solution because of delta"
+        return []
+      elsif delta.nearly_equals 0
+        puts "one sol because of delte"
+        [cp]
+      else
+        x1 = ( f * d.z + sgn * d.x * Math.sqrt(delta) ) / l**2
+        x2 = ( f * d.z - sgn * d.x * Math.sqrt(delta) ) / l**2
+        z1 = (-f * d.x + d.z.abs *   Math.sqrt(delta) ) / l**2
+        z2 = (-f * d.x - d.z.abs *   Math.sqrt(delta) ) / l**2
+        candidates = [Vector[x1,0,z1] + @center, Vector[x2,0,z2] + @center]
+        # check if points are really on both segments
+        candidates.select{|c| [self,line].all?{|seg| seg.touches? c } }
+      end
+    end
+  end
+  
+  def cut_at_point p
+    a = angle_of p
+    cpy1, cpy2 = dup, dup
+    cpy1.start_angle = a
+    cpy2.end_angle = a
+    [cpy1, cpy2]
   end
   
   def tesselate
