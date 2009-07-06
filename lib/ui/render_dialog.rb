@@ -131,8 +131,10 @@ class RenderDialog
       lxs << "AttributeEnd\n"
     end
     # create groundplane
-    tris = [ [Vector[-100, 0, -100], Vector[-100, 0, 100], Vector[100, 0, -100]], 
-             [Vector[-100, 0, 100],  Vector[100, 0, 100],  Vector[100, 0, -100]] ]
+    $manager.glview.ground.calculate_dimensions
+    y = $manager.glview.ground.g_plane.origin.y
+    tris = [ [Vector[-100, y, -100], Vector[-100, y, 100], Vector[100, y, -100]], 
+             [Vector[-100, y, 100],  Vector[100, y, 100],  Vector[100, y, -100]] ]
     lxs << "AttributeBegin\n"
     lxs << 'NamedMaterial "default_mat"
     '

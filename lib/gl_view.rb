@@ -112,7 +112,7 @@ end
 
 
 class GroundPlane
-  attr_reader :dirty
+  attr_reader :dirty, :g_plane
   def initialize res_x=32, res_y=32
     @res_x, @res_y = res_x, res_y
     @tex = GL.GenTextures(1)[0]
