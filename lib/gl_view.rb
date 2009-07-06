@@ -143,14 +143,14 @@ class GroundPlane
       end
       map = Image.new @res_x, @res_y
       for x in 0...@res_x
-        break if cancel
+        break if cancel or not $manager.glview.render_shadows
         if dialog
           progress.fraction += increment
           progress.text = GetText._("Processing scanline ") + "#{x}/#{@res_x}"
         end
         for y in 0...@res_y
           sleep 0.005 unless dialog # because gtk freezes otherwise
-          break if cancel
+          break if cancel or not $manager.glview.render_shadows
           pix = Pixel.new
           pix_finished = false
           for s in solids
@@ -608,9 +608,10 @@ class GLView < Gtk::DrawingArea
   
   def render_shadows= b
     @render_shadows = b
-    #@ground.generate_shadowmap true
     $manager.set_status_text GetText._("Rendering shadowmap...")
+    @ground.clean_up
     @ground.calculate_dimensions
+    @ground.dirty = true
     Thread.start do
       while @render_shadows
         if @ground.dirty
