@@ -35,8 +35,10 @@ class WorkingPlane
       if step != 0
         @size.step( new_size, step ) do |size|
           @size = size
-          build_displaylists
-          $manager.glview.redraw
+          if $preferences[:animate_working_planes] or size == new_size
+            build_displaylists
+            $manager.glview.redraw
+          end
         end
       end
     end
