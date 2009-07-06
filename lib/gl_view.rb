@@ -251,7 +251,7 @@ class GroundPlane
       GL.Enable( GL::NORMALIZE )
       GL.PushMatrix
         GL.Scalef(1.0,-1.0, 1.0)
-        GL.Translate(0, -@g_plane.origin.y + 0.02, 0)
+        GL.Translate(0, -@g_plane.origin.y * 2 + 0.01, 0)
         #XXX lightsources should be mirrored as well
         @objects.each{|o| $manager.glview.draw_part o }
       GL.PopMatrix
