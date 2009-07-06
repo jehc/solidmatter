@@ -1232,28 +1232,30 @@ class EditSketchTool < SketchTool
   end
   
   def click_left( x,y )
-    sel = @glview.select( x,y )
-    case sel
-    when Segment
-      if $manager.key_pressed? :Shift
-        $manager.selection.switch sel
-        @selection = $manager.selection.all
+    unless @draw_dot
+      sel = @glview.select( x,y )
+      case sel
+      when Segment
+        if $manager.key_pressed? :Shift
+          $manager.selection.switch sel
+          @selection = $manager.selection.all
+        else
+          $manager.selection.select sel
+          @selection = [sel]
+        end
+      when Dimension
+        FloatingEntry.new( x,y, sel.value ) do |value| 
+          sel.value = value
+          @sketch.build_displaylist
+          @glview.redraw
+        end
       else
-        $manager.selection.select sel
-        @selection = [sel]
+        $manager.selection.deselect_all unless $manager.key_pressed? :Shift
+        @selection = nil
       end
-    when Dimension
-      FloatingEntry.new( x,y, sel.value ) do |value| 
-        sel.value = value
-        @sketch.build_displaylist
-        @glview.redraw
-      end
-    else
-      $manager.selection.deselect_all unless $manager.key_pressed? :Shift
-      @selection = nil
+      @sketch.build_displaylist
+      @glview.redraw
     end
-    @sketch.build_displaylist
-    @glview.redraw
     super
   end
   
@@ -1270,11 +1272,13 @@ class EditSketchTool < SketchTool
       if @selection and @selection.include? new_selection    
         @points_to_drag = @selection.map{|e| e.dynamic_points }.flatten.uniq
         @old_points = Marshal.load(Marshal.dump( @points_to_drag ))
-      elsif new_selection and not $manager.key_pressed? :Shift
-        click_left( x,y )
-        press_left( x,y )
-      else
-        #click_left( x,y )
+      elsif not $manager.key_pressed? :Shift
+        if new_selection and not @draw_dot
+          click_left( x,y )
+          press_left( x,y )
+        else
+          click_left( x,y )
+        end
       end
     end
   end
@@ -1285,7 +1289,12 @@ class EditSketchTool < SketchTool
     pos, dummy = snapped( x,y, [@draw_dot] )
     if pos and @drag_start
       move = @drag_start.vector_to pos
-      if @selection
+      if @draw_dot
+        @draw_dot.x = @old_draw_dot.x + move.x
+        @draw_dot.y = @old_draw_dot.y + move.y
+        @draw_dot.z = @old_draw_dot.z + move.z
+        3.times{ @sketch.update_constraints [@draw_dot] }
+      elsif @selection
         @points_to_drag.zip( @old_points ).each do |neu, original|
           neu.x = original.x + move.x
           neu.y = original.y + move.y
@@ -1293,11 +1302,6 @@ class EditSketchTool < SketchTool
         end
         3.times{ @sketch.update_constraints @points_to_drag } #XXX once should be enough
         #@points_to_drag.each{|p| @sketch.update_constraints [p] }
-      elsif @draw_dot
-        @draw_dot.x = @old_draw_dot.x + move.x
-        @draw_dot.y = @old_draw_dot.y + move.y
-        @draw_dot.z = @old_draw_dot.z + move.z
-        3.times{ @sketch.update_constraints [@draw_dot] }
       end
       @sketch.build_displaylist
       @glview.redraw
