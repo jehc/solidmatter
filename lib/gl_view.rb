@@ -660,6 +660,10 @@ class GLView < Gtk::DrawingArea
       # draw assembly components and sketches
       draw_coordinate_axes unless @do_not_swap
       GL.LineStipple(5, 0x1C47)
+      if @drag_plane
+        recurse_draw @drag_plane
+        return
+      end
       recurse_draw $manager.project.main_assembly
       wc = $manager.work_component
       wc.dimensions.each{|c| recurse_draw c }
@@ -782,6 +786,22 @@ class GLView < Gtk::DrawingArea
     @do_not_swap = true
     redraw
     @do_not_swap = false
+  end
+  
+  def pos_on_plane_through_point( x,y, p )
+    @drag_plane = WorkingPlane.new
+    @drag_plane.plane.origin = p
+    @drag_plane.plane.u_vec = @cameras[@current_cam_index].right_vec
+    @drag_plane.plane.v_vec = @cameras[@current_cam_index].up_vec
+    @drag_plane.visible = true
+    @drag_plane.size = 100
+    @drag_plane.spacing = 50
+    @drag_plane.build_displaylists
+    pos = screen2world( x,y )
+    puts pos
+    @drag_plane.clean_up
+    @drag_plane = nil
+    pos
   end
   
   def screen2world( x, y )

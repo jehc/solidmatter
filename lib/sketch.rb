@@ -14,7 +14,7 @@ class WorkingPlane
   include Selectable
   attr_reader :plane, :parent
   attr_accessor :size, :spacing, :visible, :displaylist, :pick_displaylist
-  def initialize( parent, plane=Plane.new )
+  def initialize( parent=nil, plane=Plane.new )
     raise ArgumentError if plane.is_a? WorkingPlane
     @plane = plane
     @displaylist = $manager.glview.add_displaylist

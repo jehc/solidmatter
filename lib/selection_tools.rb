@@ -39,7 +39,7 @@ class PartSelectionTool < SelectionTool
     mouse_move( x,y )
     if @current_comp
       if $manager.key_pressed? :Shift
-        $manager.selection.add @current_comp
+        $manager.selection.switch @current_comp
       else
         $manager.select @current_comp
       end
@@ -47,6 +47,19 @@ class PartSelectionTool < SelectionTool
       $manager.selection.deselect_all
     end
     $manager.op_view.select @current_comp
+  end
+  
+  def press_left( x,y )
+    super
+    if @current_comp
+      @drag_start = @glview.pos_on_plane_through_point( x,y, @current_comp.position )
+      @start_pos = @current_comp.position
+      @comp_to_move = @current_comp
+    else
+      @drag_start = nil
+      @start_pos = nil
+      @comp_to_move = nil
+    end
   end
   
   def double_click( x,y )
@@ -65,6 +78,15 @@ class PartSelectionTool < SelectionTool
     @glview.redraw
   end
   
+  def drag_left( x,y )
+    super
+    return unless @comp_to_move
+    pos = @glview.pos_on_plane_through_point( x,y, @drag_start )
+    dir = @drag_start.vector_to pos
+    @comp_to_move.position = @start_pos + dir
+    @glview.redraw
+  end
+  
   def press_right( x,y, time )
     super
     click_left( x,y )
@@ -77,7 +99,6 @@ class PartSelectionTool < SelectionTool
     super
     GL.Color4f( 0.9, 0.2, 0, 0.5 )
     GL.Disable(GL::POLYGON_OFFSET_FILL)
-    #@current_part.solid.faces.each{|f| f.draw } if @current_part
     if @current_comp
       parts = (@current_comp.class == Assembly) ? @current_comp.contained_parts : [@current_comp]
       for list in parts.map{|p| p.displaylist }

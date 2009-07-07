@@ -721,8 +721,8 @@ end
 class Instance
   include Selectable
   @@used_ids ||= []
-  attr_reader :parent, :position, :rotation, :transparent, :component_id
-  attr_accessor :visible, :real_component
+  attr_reader :parent, :transparent, :component_id
+  attr_accessor :visible, :real_component, :position, :rotation
   def initialize( component, parent=nil )
     raise "Parts must have a parent" if component.class == Part and not parent
     @real_component = component
