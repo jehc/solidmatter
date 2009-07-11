@@ -1124,6 +1124,17 @@ class GLView < Gtk::DrawingArea
     set_displaymode old_mode
     return im
   end
+  
+  def object_space obj
+    ancestors = [obj]
+    ancestors << ancestors.last.parent while ancestors.last.parent
+    for a in ancestors.reverse 
+      GL.PushMatrix
+      GL.Translate( a.position.x, a.position.y, a.position.z )
+    end
+    yield
+    ancestors.size.times{ GL.PopMatrix }
+  end
 end
 
 

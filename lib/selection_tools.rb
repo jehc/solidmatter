@@ -101,8 +101,10 @@ class PartSelectionTool < SelectionTool
     GL.Disable(GL::POLYGON_OFFSET_FILL)
     if @current_comp
       parts = (@current_comp.class == Assembly) ? @current_comp.contained_parts : [@current_comp]
-      for list in parts.map{|p| p.displaylist }
-        GL.CallList list
+      for p in parts
+        @glview.object_space(p) do
+          GL.CallList p.displaylist
+        end
       end
     end
     GL.Enable(GL::POLYGON_OFFSET_FILL)
@@ -192,7 +194,9 @@ class OperatorSelectionTool < SelectionTool
     super
     GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
     GL.Disable(GL::POLYGON_OFFSET_FILL)
-    @draw_faces.each{|f| f.draw }
+    @glview.object_space($manager.work_component) do
+      @draw_faces.each{|f| f.draw }
+    end
     #GL.CallList @op_displaylists[@current_op] if @current_op
     GL.Enable(GL::POLYGON_OFFSET_FILL)
   end
