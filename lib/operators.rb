@@ -273,6 +273,8 @@ class RevolveOperator < Operator
           show_changes
           axis_button.active = false
         end
+      else
+        $manager.cancel_current_tool
       end
     end
     bar.append( axis_button )

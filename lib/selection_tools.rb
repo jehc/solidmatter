@@ -371,6 +371,8 @@ class EdgeSelectionTool < SelectionTool
   def initialize
     super GetText._("Select edges:")
     @no_depth = true
+    @op_sketch = $manager.work_operator.settings[:sketch]
+    @op_sketch.visible = true if @op_sketch
   end
   
   def selection_modes
@@ -400,6 +402,11 @@ class EdgeSelectionTool < SelectionTool
   
   def resume
     super
+  end
+  
+  def exit
+    super
+    @op_sketch.visible = false if @op_sketch
   end
 end
 

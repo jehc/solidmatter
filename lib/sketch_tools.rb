@@ -174,19 +174,20 @@ class SketchTool < Tool
         GL.Vertex( dot.x, dot.y, dot.z )
       GL.End
     end
-    GL.Enable(GL::DEPTH_TEST)
     # draw additional temporary geometry
     for seg in @temp_segments
       GL.LineWidth(2)
       GL.Color3f(1,1,1)
-      for v in seg.dynamic_points
-        v.take_coords_from sketch2world( v )
-      end
+#      for v in seg.dynamic_points
+#        v.take_coords_from sketch2world( v )
+#      end
       seg.draw
-      for v in seg.dynamic_points
-        v.take_coords_from world2sketch( v )
-      end
+      puts "dreawing"
+#      for v in seg.dynamic_points
+#        v.take_coords_from world2sketch( v )
+#      end
     end
+    GL.Enable(GL::DEPTH_TEST)
   end
   
   def world2sketch( v )
@@ -524,6 +525,19 @@ class ConstrainTool < SketchTool
       end
     end 
     super
+  end
+  
+  def mouse_move( x,y )
+    p = @glview.screen2world( x,y )
+    p, snapped = point_snapped(p) if p
+    if snapped
+      @draw_dot = world2sketch p
+      @temp_segments = []
+    else
+      @draw_dot = nil
+      @temp_segments = [@glview.select(x,y)].compact
+    end
+    @glview.redraw
   end
   
   def draw
