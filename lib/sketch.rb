@@ -402,6 +402,7 @@ class SketchConstraint
   end
 end
 
+
 class CoincidentConstraint < SketchConstraint
   def initialize( sketch, p1, p2 )
     @p1 = p1
@@ -435,10 +436,11 @@ class CoincidentConstraint < SketchConstraint
   end
 end
 
+
 class HorizontalConstraint < SketchConstraint
   def initialize( sketch, p1_or_line, p2=nil )
     if p2
-      @p1 = p1
+      @p1 = p1_or_line
       @p2 = p2
     else
       @p1 = p1_or_line.pos1
@@ -484,10 +486,11 @@ class HorizontalConstraint < SketchConstraint
   end
 end
 
+
 class VerticalConstraint < SketchConstraint
   def initialize( sketch, p1_or_line, p2=nil )
     if p2
-      @p1 = p1
+      @p1 = p1_or_line
       @p2 = p2
     else
       @p1 = p1_or_line.pos1
@@ -533,6 +536,50 @@ class VerticalConstraint < SketchConstraint
   end
 end
 
+
+class EqualLengthConstraint < SketchConstraint
+  def initialize( sketch, seg1, seg2 )
+    @seg1 = seg1
+    @seg2 = seg2
+    setup_texture '../data/icons/small/wheel_small.png'
+    super sketch
+  end
+  
+  def constrained_objects
+    [@seg1.pos1, @seg1.pos2, @seg2.pos1, @seg2.pos2]
+  end
+  
+  def satisfied
+    @seg1.length == @seg2.length
+  end
+  
+  def update immutable_objs
+    super
+    if satisfied
+      return false
+    else
+      objs = [@seg1, @seg2]
+      immutables, mutables = objs.partition{|o| o.dynamic_points.all?{|p| immutable_objs.include? p } }
+      mutable = mutables.choice
+      other = (objs - [mutable])[0]
+      # check which point we can still modify
+      mut_p = mutable.dynamic_points.find{|p| not immutable_objs.include? p }
+      other_p = (mutable.dynamic_points - [mut_p])[0]
+      mut_p.take_coords_from( other_p + other_p.vector_to(mut_p).normalize * other.length )
+      return true
+    end
+  end
+  
+  def draw
+    sketch_points = @sketch.segments.map{|s| s.dynamic_points }.flatten
+    center = sketch_points.inject{|sum,p| sum + p } / sketch_points.size
+    middle = (@p1 + @p2)/2.0
+    @tex_pos = middle + center.vector_to(middle).normalize * 0.015
+    super
+  end
+end
+
+
 class Dimension < SketchConstraint
   include Units
   def self.draw_arrow( points, draw_tip=true )
@@ -574,6 +621,7 @@ class Dimension < SketchConstraint
     GL.LineWidth( @selection_pass ? 6.0 : 3.0 )
   end
 end
+
 
 class RadialDimension < Dimension
   def initialize( arc, position, sketch, temp=false )
@@ -620,6 +668,7 @@ class RadialDimension < Dimension
     Dimension.draw_text( "R#{enunit @arc.radius}", Tool.sketch2world(pos1, pl) )
   end
 end
+
 
 class HorizontalDimension < Dimension
   def initialize( line, pos, sketch, temp=false )
@@ -699,6 +748,7 @@ class HorizontalDimension < Dimension
   end
 end
 
+
 class VerticalDimension < Dimension
   def initialize( line, pos, sketch, temp=false )
     @line = line
@@ -776,6 +826,7 @@ class VerticalDimension < Dimension
     Dimension.draw_text( enunit(value), midpoint )
   end
 end
+
 
 class LengthDimension < Dimension
   def initialize( p1, p2, cursor_pos, sketch, temp=false )

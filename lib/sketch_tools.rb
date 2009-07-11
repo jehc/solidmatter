@@ -484,7 +484,7 @@ class ConstrainTool < SketchTool
   def initialize sketch
     super( GetText._("Choose one or more segments to constrain:"), sketch )
     @selected_segments = []
-    @does_snap = false
+    @does_snap = true
     @no_depth = true
   end
   
@@ -515,9 +515,11 @@ class ConstrainTool < SketchTool
         end
         c.visible = true
         @sketch.constraints << c
-        @sketch.update_constraints [@selected_segments.first.pos1]
+        @sketch.update_constraints [@selected_segments.first.is_a?(Vector) ? 
+                                    @selected_segments.first : @selected_segments.first.pos1]
         @sketch.build_displaylist
         @selected_segments = []
+        @chooser.destroy
         @glview.redraw
       end
     end 

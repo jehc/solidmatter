@@ -109,7 +109,7 @@ class FloatingWidget < Gtk::Window
     self.decorated = false
     self.skip_taskbar_hint = true
     self.skip_pager_hint = true
-    setup_ui *args, &b
+    destroy or return unless setup_ui *args, &b
     # position right next to cursor
     x,y = convert2screen( x,y )
     move( x,y )
@@ -202,6 +202,7 @@ class FloatingEntry < FloatingWidget
     ok_btn.signal_connect('clicked'){ yield entry.value if block_given? ; destroy }
     cancel_btn.signal_connect('clicked'){ yield value ; destroy }
     entry.on_change_value{ yield entry.value if block_given? }
+    true
   end
 end
 
@@ -209,9 +210,8 @@ end
 class SketchConstraintChooser < FloatingWidget
   def setup_ui segments
     main_box = Gtk::HBox.new false
-    add main_box
     s1, s2 = segments[0], segments[1]
-    if s1.is_a? Line and not s2
+    if (s1.is_a? Line and not s2) or [s1,s2].all?{|s| s.is_a? Vector }
       btn = Gtk::Button.new 
       btn.image = Gtk::Image.new('../data/icons/small/horizontal.png')
       btn.signal_connect('clicked'){ yield :horizontal }
@@ -220,7 +220,10 @@ class SketchConstraintChooser < FloatingWidget
       btn.image = Gtk::Image.new('../data/icons/small/vertical.png')
       btn.signal_connect('clicked'){ yield :vertical }
       main_box.add btn
+      add main_box
+      return true
     end
+    false
   end
 end
 
