@@ -987,7 +987,15 @@ class GLView < Gtk::DrawingArea
   end
   
   def zoom_selection
-    sel = $manager.selection.empty? ? [$manager.project.main_assembly] : $manager.selection
+    sel = if $manager.selection.empty?
+      if sk = $manager.work_sketch
+        sk.segments
+      else
+        [$manager.project.main_assembly]
+      end
+    else
+      $manager.selection
+    end
     zoom_onto sel
   end
   
