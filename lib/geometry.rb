@@ -109,6 +109,7 @@ end
 
 class Vector # should be discarded in favor of point
   attr_writer :constraints
+  attr_accessor :segment
   def constraints
     @constraints ||= []
     @constraints
@@ -134,6 +135,8 @@ class Line < Segment
     super sketch
     @pos1 = start.dup
     @pos2 = ende.dup
+    @pos1.segment = self
+    @pos2.segment = self
   end
 
   def midpoint

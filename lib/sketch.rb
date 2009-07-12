@@ -342,11 +342,15 @@ class SketchConstraint
   end
   
   def connected_constraints
-    constrained_objects.map{|o| o.constraints }.flatten - [self]
+    (constrained_objects + indirectly_constrained_objects).map{|o| o.constraints }.flatten - [self]
   end
   
   def constrained_objects
     raise "#{self.class} does not constrain objects"
+  end
+  
+  def indirectly_constrained_objects
+    []
   end
   
   def satisfied
@@ -409,6 +413,10 @@ class CoincidentConstraint < SketchConstraint
   def constrained_objects
     [@p1, @p2]
   end
+
+  def indirectly_constrained_objects
+    [@p1.segment, @p2.segment].uniq
+  end
   
   def satisfied
     @p1 == @p2
@@ -450,6 +458,10 @@ class HorizontalConstraint < SketchConstraint
   
   def constrained_objects
     [@p1, @p2]
+  end
+  
+  def indirectly_constrained_objects
+    [@p1.segment, @p2.segment].uniq
   end
   
   def satisfied
@@ -502,6 +514,10 @@ class VerticalConstraint < SketchConstraint
     [@p1, @p2]
   end
   
+  def indirectly_constrained_objects
+    [@p1.segment, @p2.segment].uniq
+  end
+  
   def satisfied
     @p1.x == @p2.x
   end
@@ -545,6 +561,10 @@ class EqualLengthConstraint < SketchConstraint
     [@seg1.pos1, @seg1.pos2, @seg2.pos1, @seg2.pos2]
   end
   
+  def indirectly_constrained_objects
+    [@seg1, @seg2]
+  end
+  
   def satisfied
     @seg1.length == @seg2.length
   end
@@ -567,11 +587,11 @@ class EqualLengthConstraint < SketchConstraint
   end
   
   def draw
-    sketch_points = @sketch.segments.map{|s| s.dynamic_points }.flatten
-    center = sketch_points.inject{|sum,p| sum + p } / sketch_points.size
-    middle = (@p1 + @p2)/2.0
-    @tex_pos = middle + center.vector_to(middle).normalize * 0.015
-    super
+#    sketch_points = @sketch.segments.map{|s| s.dynamic_points }.flatten
+#    center = sketch_points.inject{|sum,p| sum + p } / sketch_points.size
+#    middle = (@p1 + @p2)/2.0
+#    @tex_pos = middle + center.vector_to(middle).normalize * 0.015
+#    super
   end
 end
 
@@ -716,6 +736,10 @@ class HorizontalDimension < Dimension
     [@line.pos1, @line.pos2]
   end
   
+  def indirectly_constrained_objects
+    [@line]
+  end
+  
   def draw
     super
     pl = @sketch.plane.plane
@@ -793,6 +817,10 @@ class VerticalDimension < Dimension
   
   def constrained_objects
     [@line.pos1, @line.pos2]
+  end
+  
+  def indirectly_constrained_objects
+    [@line]
   end
   
   def draw

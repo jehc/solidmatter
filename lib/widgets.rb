@@ -210,22 +210,34 @@ end
 
 
 class SketchConstraintChooser < FloatingWidget
-  def setup_ui segments
+  def setup_ui segments, &b
     main_box = Gtk::HBox.new false
     s1, s2 = segments[0], segments[1]
+    show_widget = false
     if (s1.is_a? Line and not s2) or [s1,s2].all?{|s| s.is_a? Vector }
-      btn = Gtk::Button.new 
-      btn.image = Gtk::Image.new('../data/icons/small/horizontal.png')
-      btn.signal_connect('clicked'){ yield :horizontal }
-      main_box.add btn
-      btn = Gtk::Button.new 
-      btn.image = Gtk::Image.new('../data/icons/small/vertical.png')
-      btn.signal_connect('clicked'){ yield :vertical }
-      main_box.add btn
-      add main_box
-      return true
+      add_button :horizontal, main_box, &b
+      add_button :vertical, main_box, &b
+      show_widget = true
     end
-    false
+    if [s1,s2].all?{|s| s.is_a? Line }
+      add_button :equal, main_box, &b
+      add_button :parallel, main_box, &b
+      show_widget = true
+    end
+    if  [s1,s2].all?{|s| s.is_a? Arc2D }
+      add_button :equal, main_box, &b
+      show_widget = true
+    end
+    add main_box
+    show_widget
+  end
+  
+  def add_button name, box
+    btn = Gtk::Button.new 
+    btn.image = Gtk::Image.new("../data/icons/small/#{name}.png")
+    btn.signal_connect('clicked'){ yield name }
+    btn.tooltip_text = name.to_s.capitalize
+    box.add btn
   end
 end
 

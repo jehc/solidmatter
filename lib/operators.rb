@@ -128,8 +128,8 @@ class ExtrudeOperator < Operator
     bar.append( Gtk::SeparatorToolItem.new )
     # constant depth
     entry = MeasureEntry.new GetText._("Depth")
-    entry.value = @settings[:depth]
-    entry.on_change_value{|val| @settings[:depth] = val; show_changes}
+    entry.value = enunit( @settings[:depth], false )
+    entry.on_change_value{|val| @settings[:depth] = ununit val; show_changes}
     bar.append entry
   end
 end
@@ -193,7 +193,8 @@ class RevolveOperator < Operator
   def initialize part
     @name = "revolve"
     @settings = {
-      :angle => 360.0,
+      :start_angle => 0.0,
+      :end_angle => 360.0,
       :type => :add,
       :axis => nil
     }
@@ -234,7 +235,7 @@ class RevolveOperator < Operator
               face = CircularFace.new( plane, 
                                        radius, 
                                        seg.length, 
-                                       0.0, @settings[:angle] )
+                                       @settings[:start_angle], @settings[:end_angle] )
             elsif seg.orthogonal_to? axis
               puts "found perpendicular"
               face = PlanarFace.new
@@ -279,10 +280,15 @@ class RevolveOperator < Operator
     end
     bar.append( axis_button )
     bar.append( Gtk::SeparatorToolItem.new )
-    # angle
-    entry = MeasureEntry.new( GetText._("Angle"), 360 )
-    entry.value = @settings[:angle]
-    entry.on_change_value{|val| @settings[:angle] = val; show_changes}
+    # start angle
+    entry = MeasureEntry.new( GetText._("Start angle"), 0 )
+    entry.value = @settings[:start_angle]
+    entry.on_change_value{|val| @settings[:start_angle] = val; show_changes}
+    bar.append entry
+    # end angle
+    entry = MeasureEntry.new( GetText._("End angle"), 360 )
+    entry.value = @settings[:end_angle]
+    entry.on_change_value{|val| @settings[:end_angle] = val; show_changes}
     bar.append entry
   end
 end

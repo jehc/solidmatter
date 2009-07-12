@@ -34,6 +34,8 @@ class ComponentMenu < Gtk::Menu
   def initialize( part, location )
     super()
     items = [
+      Gtk::ImageMenuItem.new(Gtk::Stock::EDIT),
+      Gtk::SeparatorMenuItem.new,
       Gtk::MenuItem.new( GetText._("Duplicate instance")),
       Gtk::MenuItem.new( GetText._("Duplicate original")),
       Gtk::ImageMenuItem.new(Gtk::Stock::CUT),
@@ -46,51 +48,55 @@ class ComponentMenu < Gtk::Menu
       Gtk::SeparatorMenuItem.new,
       Gtk::ImageMenuItem.new(Gtk::Stock::PROPERTIES)
     ]
-    items[2].sensitive = (not $manager.selection.empty?)
-    items[3].sensitive = (not $manager.selection.empty?)
-    items[4].sensitive = $manager.clipboard ? true : false
+    items[4].sensitive = (not $manager.selection.empty?)
     items[5].sensitive = (not $manager.selection.empty?)
-    items[7].active = part.visible
-    items[8].active = part.cog ? true : false
+    items[6].sensitive = $manager.clipboard ? true : false
+    items[7].sensitive = (not $manager.selection.empty?)
+    items[9].active = part.visible
+    items[10].active = part.cog ? true : false
     
 
-    # duplicate instance
+    # edit part
     items[0].signal_connect("activate") do
+      $manager.change_working_level $manager.selection.first
+    end
+    # duplicate instance
+    items[2].signal_connect("activate") do
       $manager.duplicate_instance
     end
     # duplicate original
-    items[1].signal_connect("activate") do
+    items[3].signal_connect("activate") do
       # dupli orig
     end
     # cut
-    items[3].signal_connect("activate") do
+    items[4].signal_connect("activate") do
       $manager.cut_to_clipboard
     end
     # copy
-    items[3].signal_connect("activate") do
+    items[5].signal_connect("activate") do
       $manager.copy_to_clipboard
     end
     # paste
-    items[4].signal_connect("activate") do
+    items[6].signal_connect("activate") do
       $manager.paste_from_clipboard
     end
     # delete
-    items[5].signal_connect("activate") do
+    items[7].signal_connect("activate") do
       $manager.delete_op_view_selected if location == :op_view
       $manager.delete_selected        if location == :glview
     end
     # visible
-    items[7].signal_connect("activate") do |w|
+    items[9].signal_connect("activate") do |w|
       part.visible = w.active?
       $manager.glview.redraw
     end
     # center of gravity
-    items[8].signal_connect("activate") do |w|
+    items[10].signal_connect("activate") do |w|
       w.active? ? part.update_cog : part.cog = nil
       $manager.glview.redraw
     end
     # properties
-    items[10].signal_connect("activate") do
+    items[12].signal_connect("activate") do
       part.display_properties
     end
     items.each{|i| append i }

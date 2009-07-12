@@ -178,14 +178,13 @@ class SketchTool < Tool
     for seg in @temp_segments
       GL.LineWidth(2)
       GL.Color3f(1,1,1)
-#      for v in seg.dynamic_points
-#        v.take_coords_from sketch2world( v )
-#      end
+      for v in seg.dynamic_points
+        v.take_coords_from sketch2world( v )
+      end
       seg.draw
-      puts "dreawing"
-#      for v in seg.dynamic_points
-#        v.take_coords_from world2sketch( v )
-#      end
+      for v in seg.dynamic_points
+        v.take_coords_from world2sketch( v )
+      end
     end
     GL.Enable(GL::DEPTH_TEST)
   end
@@ -513,6 +512,8 @@ class ConstrainTool < SketchTool
           HorizontalConstraint.new( @sketch, *@selected_segments )
         when :vertical
           VerticalConstraint.new( @sketch, *@selected_segments )
+        when :equal
+          EqualLengthConstraint.new( @sketch, *@selected_segments )
         end
         c.visible = true
         @sketch.constraints << c

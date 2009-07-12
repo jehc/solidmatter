@@ -671,7 +671,7 @@ class GLView < Gtk::DrawingArea
         #wc.dimensions.each{|c| recurse_draw c }
         #(wc.constraints - wc.dimensions).each{|c| recurse_draw c if c.visible }
         if $manager.work_operator
-          op_sketch = $manager.work_operator.settings[:sketch] 
+          op_sketch = $manager.work_operator.settings[:sketch]
           recurse_draw op_sketch if op_sketch
         end
         recurse_draw $manager.work_sketch if $manager.work_sketch
@@ -753,6 +753,7 @@ class GLView < Gtk::DrawingArea
         top_comp.unused_sketches.each{|sketch| recurse_draw sketch }
       ### ------------------------- Sketch ------------------------- ###
       elsif top_comp.class == Sketch
+        recurse_draw top_comp.plane
         GL.Translate( top_comp.plane.plane.origin.x, top_comp.plane.plane.origin.y, top_comp.plane.plane.origin.z )
         GL.Disable(GL::LIGHTING)
         if @selection_pass
@@ -766,7 +767,6 @@ class GLView < Gtk::DrawingArea
           GL.LineWidth(4)
           GL.CallList( top_comp.displaylist )
         end
-        recurse_draw top_comp.plane
       ### ---------------------- Working plane ---------------------- ###
       elsif top_comp.class == WorkingPlane
         GL.Translate( top_comp.plane.origin.x, top_comp.plane.origin.y, top_comp.plane.origin.z )
@@ -863,6 +863,8 @@ class GLView < Gtk::DrawingArea
           visible_parts.each{|inst| inst.build_wire_selection_displaylist }
         when :planes
           @selectables += $manager.work_component.working_planes
+          @selectables += $manager.work_component.unused_sketches.map{|s| s.plane }
+          @selectables += [$manager.work_operator.settings[:sketch]].compact if $manager.work_operator
         when :instances
           @selectables += visible_parts
         when :segments
