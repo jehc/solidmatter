@@ -4,6 +4,7 @@
 #  Copyright (c) 2008. All rights reserved.
 
 require 'gnome2'
+require "units.rb"
 
 class SearchEntry < Gtk::ToolItem 
   def initialize
@@ -134,6 +135,7 @@ end
 
 
 class MeasureEntry < Gtk::VBox
+  include Units
   def initialize( label=nil, max_value=10 )
     super false
     @entry = Gtk::SpinButton.new( 0, max_value, 0.05 )
@@ -162,11 +164,11 @@ class MeasureEntry < Gtk::VBox
   end
   
   def value
-   @entry.value
+   ununit @entry.value
   end
   
   def value=( val )
-   @entry.value = val
+   @entry.value = enunit( val, false )
   end
   
   def on_change_value

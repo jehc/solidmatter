@@ -15,8 +15,9 @@ module Units
     3 => '³'
   }
 
-  def enunit( value, power=1, usys=$manager.project.unit_system )
+  def enunit( value, for_display=true, power=1, usys=$manager.project.unit_system )
     power.times{ value *= CONVERSION_FACTORS[usys.to_sym] }
+    return value unless for_display
     value = value.to_s.gsub(/.[0-9]+/){|m| m[0..$preferences[:decimal_places]] }
     value + usys.to_s + POWERS[power]
   end
