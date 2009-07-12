@@ -255,9 +255,6 @@ class Sketch
         end
         seg.draw
       end
-    #  for dim in @dimensions
-    #    dim.draw
-    #  end
     GL.EndList  
   end
   

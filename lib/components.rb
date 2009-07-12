@@ -759,6 +759,19 @@ class Instance
     @transparent = bool
     self.components.each{|c| c.transparent = bool} if self.class == Assembly
   end
+  
+  def object_to_world p
+    ancestors = [self]
+    ancestors << ancestors.last.parent while ancestors.last.parent
+    for a in ancestors.reverse 
+      p += a.position
+    end
+    p
+  end
+  
+  def bounding_box
+    @real_component.bounding_box.map{|p| object_to_world p }
+  end
 end
 
 

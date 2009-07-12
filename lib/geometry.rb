@@ -28,7 +28,7 @@ def bounding_box_from points
     Vector[max_x, max_y, min_z],
     Vector[max_x, min_y, max_z],
     Vector[max_x, max_y, max_z]]
-  points.empty? ? nil : corners
+  points.empty? ? [] : corners
 end
 
 def sparse_bounding_box_from points

@@ -146,7 +146,7 @@ class GroundPlane
         break if cancel or not $manager.glview.render_shadows
         if dialog
           progress.fraction += increment
-          progress.text = GetText._("Processing scanline ") + "#{x}/#{@res_x}"
+          progress.text = GetText._("Processing scanline") + " #{x}/#{@res_x}"
         end
         for y in 0...@res_y
           sleep 0.005 unless dialog # because gtk freezes otherwise
@@ -253,7 +253,7 @@ class GroundPlane
         GL.Scalef(1.0,-1.0, 1.0)
         GL.Translate(0, -@g_plane.origin.y * 2 + 0.01, 0)
         #XXX lightsources should be mirrored as well
-        @objects.each{|o| $manager.glview.draw_part o }
+        @objects.each{|o| $manager.glview.object_space(o){ $manager.glview.draw_part o } }
       GL.PopMatrix
       GL.Disable( GL::NORMALIZE )
   end
@@ -665,9 +665,18 @@ class GLView < Gtk::DrawingArea
         return
       end
       recurse_draw $manager.project.main_assembly
-      wc = $manager.work_component
-      wc.dimensions.each{|c| recurse_draw c }
       @handles.each{|h| @selection_pass ? h.draw_for_selection : h.draw }
+      wc = $manager.work_component
+      object_space(wc) do
+        #wc.dimensions.each{|c| recurse_draw c }
+        #(wc.constraints - wc.dimensions).each{|c| recurse_draw c if c.visible }
+        if $manager.work_operator
+          op_sketch = $manager.work_operator.settings[:sketch] 
+          recurse_draw op_sketch if op_sketch
+        end
+        recurse_draw $manager.work_sketch if $manager.work_sketch
+        wc.constraints.each{|c| recurse_draw c if c.visible }
+      end
       # draw 3d interface stuff
       GL.Disable(GL::LIGHTING)
       unless @selection_pass or @picking_pass
@@ -678,7 +687,6 @@ class GLView < Gtk::DrawingArea
         end
       end
       @ground.draw unless @selection_pass or @picking_pass
-      (wc.constraints - wc.dimensions).each{|c| recurse_draw c if c.visible }
   end
   
   def draw_part p
@@ -743,11 +751,6 @@ class GLView < Gtk::DrawingArea
         end
         top_comp.working_planes.each{|wp| recurse_draw wp }
         top_comp.unused_sketches.each{|sketch| recurse_draw sketch }
-        if $manager.work_operator
-          op_sketch = $manager.work_operator.settings[:sketch] 
-          recurse_draw op_sketch if op_sketch
-        end
-        recurse_draw $manager.work_sketch if $manager.work_sketch
       ### ------------------------- Sketch ------------------------- ###
       elsif top_comp.class == Sketch
         GL.Translate( top_comp.plane.plane.origin.x, top_comp.plane.plane.origin.y, top_comp.plane.plane.origin.z )

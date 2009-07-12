@@ -97,8 +97,10 @@ class OpView < Gtk::ScrolledWindow
       GL.Color4f( 0.9, 0.2, 0, 0.5 )
       GL.Disable(GL::POLYGON_OFFSET_FILL)
       parts = (comp.class == Assembly) ? comp.contained_parts : [comp]
-      for list in parts.map{|p| p.displaylist }
-        GL.CallList list
+      for p in parts
+        $manager.glview.object_space p do
+          GL.CallList p.displaylist
+        end
       end
       GL.Enable(GL::POLYGON_OFFSET_FILL)
     end
