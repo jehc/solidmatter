@@ -225,7 +225,6 @@ class Sketch
     @constraints = []
     @plane = WorkingPlane.new( parent, plane )
     @plane_id = parent.solid.faces.map{|f| (f.is_a? PlanarFace) ? f.plane : nil }.compact.index plane
-    parent.working_planes.push @plane
     @displaylist = $manager.glview.add_displaylist
     @visible = false
     @selected = false

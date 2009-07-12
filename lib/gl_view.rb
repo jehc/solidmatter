@@ -766,6 +766,7 @@ class GLView < Gtk::DrawingArea
           GL.LineWidth(4)
           GL.CallList( top_comp.displaylist )
         end
+        recurse_draw top_comp.plane
       ### ---------------------- Working plane ---------------------- ###
       elsif top_comp.class == WorkingPlane
         GL.Translate( top_comp.plane.origin.x, top_comp.plane.origin.y, top_comp.plane.origin.z )
