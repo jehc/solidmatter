@@ -136,7 +136,7 @@ end
 
 class MeasureEntry < Gtk::VBox
   include Units
-  def initialize( label=nil, max_value=10 )
+  def initialize( label=nil, max_value=20 )
     super false
     @entry = Gtk::SpinButton.new( 0, max_value, 0.05 )
     @entry.update_policy = Gtk::SpinButton::UPDATE_IF_VALID
@@ -172,7 +172,7 @@ class MeasureEntry < Gtk::VBox
   end
   
   def on_change_value
-   @entry.signal_connect('value_changed'){|w| yield w.value }
+   @entry.signal_connect('value_changed'){|w| yield value }
   end
 end
 

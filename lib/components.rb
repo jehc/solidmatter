@@ -309,6 +309,7 @@ end
 
 # abstract base class for operators
 class Operator
+  include Units
   attr_reader :settings, :solid, :part, :dimensions
   attr_accessor :name, :enabled, :previous#, :toolbar
   def initialize part

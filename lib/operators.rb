@@ -128,8 +128,8 @@ class ExtrudeOperator < Operator
     bar.append( Gtk::SeparatorToolItem.new )
     # constant depth
     entry = MeasureEntry.new GetText._("Depth")
-    entry.value = enunit( @settings[:depth], false )
-    entry.on_change_value{|val| @settings[:depth] = ununit val; show_changes}
+    entry.value = @settings[:depth]
+    entry.on_change_value{|val| @settings[:depth] = val; show_changes}
     bar.append entry
   end
 end

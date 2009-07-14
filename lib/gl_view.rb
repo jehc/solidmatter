@@ -864,7 +864,7 @@ class GLView < Gtk::DrawingArea
         when :planes
           @selectables += $manager.work_component.working_planes
           @selectables += $manager.work_component.unused_sketches.map{|s| s.plane }
-          @selectables += [$manager.work_operator.settings[:sketch]].compact if $manager.work_operator
+          @selectables << $manager.work_operator.settings[:sketch].plane if $manager.work_operator and $manager.work_operator.settings[:sketch]
         when :instances
           @selectables += visible_parts
         when :segments
