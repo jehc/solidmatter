@@ -327,7 +327,7 @@ class Operator
   def operate
     if @previous
       @solid = @previous.solid ? @previous.solid.dup : nil
-      segs = @settings[:segments]
+      segs = @settings[:loops].flatten
       if segs
         sketches = segs.map{|seg| seg.sketch }.compact.uniq
         sketches.each{|sk| sk.refetch_plane_from_solid @previous.solid }

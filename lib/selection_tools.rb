@@ -36,7 +36,6 @@ class PartSelectionTool < SelectionTool
   
   def click_left( x,y )
     super
-    mouse_move( x,y )
     if @current_comp
       if $manager.key_pressed? :Shift
         $manager.selection.switch @current_comp
@@ -51,6 +50,7 @@ class PartSelectionTool < SelectionTool
   
   def press_left( x,y )
     super
+    mouse_move( x,y )
     if @current_comp
       @drag_start = @glview.pos_on_plane_through_point( x,y, @current_comp.position )
       @start_pos = @current_comp.position
