@@ -447,8 +447,9 @@ class DimensionTool < SketchTool
   
   def dimension_for( seg_or_points, x,y, temp=false )
     if pos = @glview.screen2world( x,y )
+      pos = world2sketch pos
       if seg_or_points.is_a? Arc2D
-        RadialDimension.new( seg_or_points, world2sketch(pos), @sketch, temp )
+        RadialDimension.new( seg_or_points, pos, @sketch, temp )
       elsif seg_or_points.is_a? Line
         width  = (seg_or_points.pos1.x - seg_or_points.pos2.x).abs
         height = (seg_or_points.pos1.z - seg_or_points.pos2.z).abs
@@ -456,12 +457,12 @@ class DimensionTool < SketchTool
         x_dist = (pos.x - midp.x).abs
         z_dist = (pos.z - midp.z).abs
         if (x_dist - z_dist).abs / (x_dist + z_dist) < 0.35
-          LengthDimension.new( seg_or_points.pos1, seg_or_points.pos2, world2sketch(pos), @sketch, temp )
+          LengthDimension.new( seg_or_points.pos1, seg_or_points.pos2, pos, @sketch, temp )
         else
           if z_dist > x_dist
-            HorizontalDimension.new( seg_or_points, world2sketch(pos), @sketch, temp )
+            HorizontalDimension.new( seg_or_points, pos, @sketch, temp )
           else
-            VerticalDimension.new( seg_or_points, world2sketch(pos), @sketch, temp )
+            VerticalDimension.new( seg_or_points, pos, @sketch, temp )
           end
         end
       elsif seg_or_points.is_a? Array and seg_or_points.size == 2
@@ -541,10 +542,10 @@ class ConstrainTool < SketchTool
     p, snapped = point_snapped(world2sketch p) if p
     if snapped
       @draw_dot = p
-      @temp_segments = []
+      @temp_segments = @selected_segments
     else
       @draw_dot = nil
-      @temp_segments = [@glview.select(x,y)].compact
+      @temp_segments = [@glview.select(x,y)].compact + @selected_segments
     end
     @glview.redraw
   end
@@ -553,7 +554,6 @@ class ConstrainTool < SketchTool
     super
     GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
     GL.LineWidth(12)
-    @selected_segments.each{|s| s.draw }
   end
   
   def exit
