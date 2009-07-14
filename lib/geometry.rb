@@ -79,7 +79,7 @@ class Segment
   end
   
   def bounding_box
-    bounding_box_from snap_points.map{|p| Tool.sketch2world(p, @sketch.plane.plane) }
+    bounding_box_from snap_points.map{|p| Tool.sketch2part(p, @sketch.plane.plane) }
   end
   
   def cut_at points

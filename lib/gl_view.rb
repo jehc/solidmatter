@@ -298,6 +298,7 @@ class GLView < Gtk::DrawingArea
     @max_remembered_views = 25
     @cameras = [Camera.new]
     @current_cam_index = 0
+    @last_mouse_down_cam = @cameras.first
     @last_mouse_down_cam_position = Vector[0,0,0]
     @last_mouse_down_cam_rotation = Vector[0,0,0]
     @last_down = Point.new(0,0)
@@ -831,12 +832,19 @@ class GLView < Gtk::DrawingArea
       pos = GLU.UnProject( x, y, z, modelview, projection, viewport )
       pos = Vector[ pos[0], pos[1], pos[2] ]
       # resolution of the depth buffer is low, so we correct the point position
-      pos = $manager.work_sketch.plane.plane.closest_point pos if $manager.work_sketch
+      #pos = $manager.work_sketch.plane.plane.closest_point pos if $manager.work_sketch
+      pos = correct_position pos
     else
       pos = nil
     end
     restore_backbuffer
     return pos
+  end
+  
+  def correct_position p
+    return p unless $manager.work_sketch
+    corrected = $manager.work_sketch.plane.plane.closest_point $manager.work_component.world2part p
+    $manager.work_component.part2world corrected
   end
   
   def world2screen( v )
@@ -1131,15 +1139,14 @@ class GLView < Gtk::DrawingArea
     return im
   end
   
-  def object_space obj
-    ancestors = [obj]
-    ancestors << ancestors.last.parent while ancestors.last.parent
-    for a in ancestors.reverse 
+  def object_space( obj, with_ancestors=true )
+    objs = with_ancestors ? obj.ancestors : [obj]
+    for o in objs
       GL.PushMatrix
-      GL.Translate( a.position.x, a.position.y, a.position.z )
+      GL.Translate( o.position.x, o.position.y, o.position.z )
     end
     yield
-    ancestors.size.times{ GL.PopMatrix }
+    objs.size.times{ GL.PopMatrix }
   end
 end
 

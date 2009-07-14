@@ -103,7 +103,7 @@ class PartSelectionTool < SelectionTool
     if @current_comp
       parts = (@current_comp.class == Assembly) ? @current_comp.contained_parts : [@current_comp]
       for p in parts
-        @glview.object_space(p) do
+        @glview.object_space(p, false) do
           GL.CallList p.displaylist
         end
       end
@@ -195,9 +195,7 @@ class OperatorSelectionTool < SelectionTool
     super
     GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
     GL.Disable(GL::POLYGON_OFFSET_FILL)
-    @glview.object_space($manager.work_component) do
-      @draw_faces.each{|f| f.draw }
-    end
+    @draw_faces.each{|f| f.draw }
     #GL.CallList @op_displaylists[@current_op] if @current_op
     GL.Enable(GL::POLYGON_OFFSET_FILL)
   end
@@ -225,7 +223,7 @@ class RegionSelectionTool < SelectionTool
         face = PlanarFace.new
         face.plane = sketch.plane.plane
         sketch.plane.build_displaylists
-        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(Tool.sketch2world(seg.pos1, sketch.plane.plane), Tool.sketch2world(seg.pos2, sketch.plane.plane), sketch)  }
+        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(Tool.sketch2part(seg.pos1, sketch.plane.plane), Tool.sketch2part(seg.pos2, sketch.plane.plane), sketch)  }
         Region.new(chain, poly, face)
       end
     end
@@ -297,7 +295,7 @@ class RegionSelectionTool < SelectionTool
     planestate = plane.visible
     plane.visible = true
     pos = @glview.screen2world( x,y )
-    pos = Tool.world2sketch( pos, plane.plane ) if pos
+    pos = Tool.part2sketch( pos, plane.plane ) if pos
     plane.visible = planestate
     return pos
   end

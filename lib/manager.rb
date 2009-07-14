@@ -342,6 +342,7 @@ public
     activate_tool 'select'
     sketch.build_displaylist
     sketch.visible = true
+    @glview.redraw
   end
   
   def operator_mode op
@@ -609,11 +610,11 @@ public
     
   end
   
-  def world2sketch( v, sk )
+  def part2sketch( v, sk )
     
   end
   
-  def sketch2world( v, sk )
+  def sketch2part( v, sk )
     
   end
 end

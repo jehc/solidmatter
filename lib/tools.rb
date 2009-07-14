@@ -16,12 +16,12 @@ class Tool
     resume
   end
 public
-  def self.world2sketch( v, plane )
+  def self.part2sketch( v, plane )
     o = plane.origin
     v - o
   end
   
-  def self.sketch2world( v, plane )
+  def self.sketch2part( v, plane )
     o = plane.origin
     v + o
   end
@@ -71,7 +71,7 @@ public
   end
   
   def resume
-    @draw_routine = lambda{ draw }
+    @draw_routine = lambda{ @glview.object_space($manager.work_component){ draw } }
     @glview.immediate_draw_routines.push @draw_routine
     $manager.set_status_text @status_text
   end

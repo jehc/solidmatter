@@ -267,7 +267,7 @@ class Solid
       # only consider the ray going in one direction
       if sect.y > p.y
         # check if within bounds of face
-        #sect = Tool.world2sketch( sect, f.plane )
+        #sect = Tool.part2sketch( sect, f.plane )
         sect = Point.new( sect.x, sect.z )
         intersections += 1 if f.polygon.contains? sect
       end
@@ -314,7 +314,7 @@ class Operator
   attr_accessor :name, :enabled, :previous#, :toolbar
   def initialize part
     @name ||= "operator"
-    @settings ||= {}
+    @settings ||= {:loops => []}
     @save_settings = @settings.dup
     @solid = nil
     @part = part
@@ -761,17 +761,30 @@ class Instance
     self.components.each{|c| c.transparent = bool} if self.class == Assembly
   end
   
-  def object_to_world p
+  def ancestors   # including self
     ancestors = [self]
     ancestors << ancestors.last.parent while ancestors.last.parent
+    ancestors
+  end
+  
+  def part2world p
     for a in ancestors.reverse 
       p += a.position
+      #XXX rotation
+    end
+    p
+  end
+  
+  def world2part p
+    for a in ancestors
+      p -= a.position
+      #XXX rotation
     end
     p
   end
   
   def bounding_box
-    @real_component.bounding_box.map{|p| object_to_world p }
+    @real_component.bounding_box.map{|p| part2world p }
   end
 end
 

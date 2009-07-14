@@ -382,7 +382,7 @@ class SketchConstraint
       GL.Disable( GL::LIGHTING )
       w = 0.03
       d = 0.03
-      pos = Tool.sketch2world( @tex_pos, @sketch.plane.plane )
+      pos = Tool.sketch2part( @tex_pos, @sketch.plane.plane )
       GL.Begin( GL::QUADS )
         glTexCoord2f(1.0, 0.0)
         GL.Vertex( pos.x - w, pos.y, pos.z + d )
@@ -680,8 +680,8 @@ class RadialDimension < Dimension
     pos2 = @arc.center + (@direction * (@arc.radius + $preferences[:dimension_offset]))
     pos1 = Vector[pos2.x + $preferences[:dimension_offset], pos2.y, pos2.z]
     pl = @sketch.plane.plane
-    Dimension.draw_arrow [Tool.sketch2world(pos1, pl), Tool.sketch2world(pos2, pl), Tool.sketch2world(pos3, pl)]
-    Dimension.draw_text( "R#{enunit @arc.radius}", Tool.sketch2world(pos1, pl) )
+    Dimension.draw_arrow [Tool.sketch2part(pos1, pl), Tool.sketch2part(pos2, pl), Tool.sketch2part(pos3, pl)]
+    Dimension.draw_text( "R#{enunit @arc.radius}", Tool.sketch2part(pos1, pl) )
   end
 end
 
@@ -743,8 +743,8 @@ class HorizontalDimension < Dimension
   def draw
     super
     pl = @sketch.plane.plane
-    p1 = Tool.sketch2world(@line.pos1, pl)
-    p2 = Tool.sketch2world(@line.pos2, pl)
+    p1 = Tool.sketch2part(@line.pos1, pl)
+    p2 = Tool.sketch2part(@line.pos2, pl)
     left  = [p1.x, p2.x].min
     right = [p1.x, p2.x].max
     upper = [p1.z, p2.z].max
@@ -826,8 +826,8 @@ class VerticalDimension < Dimension
   def draw
     super
     pl = @sketch.plane.plane
-    p1 = Tool.sketch2world(@line.pos1, pl)
-    p2 = Tool.sketch2world(@line.pos2, pl)
+    p1 = Tool.sketch2part(@line.pos1, pl)
+    p2 = Tool.sketch2part(@line.pos2, pl)
     left  = [p1.x, p2.x].min
     right = [p1.x, p2.x].max
     upper = [p1.z, p2.z].max
@@ -901,8 +901,8 @@ class LengthDimension < Dimension
   def draw
     super
     pl = @sketch.plane.plane
-    p1 = Tool.sketch2world(@p1, pl)
-    p2 = Tool.sketch2world(@p2, pl)
+    p1 = Tool.sketch2part(@p1, pl)
+    p2 = Tool.sketch2part(@p2, pl)
     left  = [p1.x, p2.x].min
     right = [p1.x, p2.x].max
     upper = [p1.z, p2.z].max

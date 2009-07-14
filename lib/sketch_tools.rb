@@ -91,7 +91,7 @@ class SketchTool < Tool
     if @does_snap
       point = @glview.screen2world( x, y )
       if point and $manager.use_sketch_guides
-        point = world2sketch( point )
+        point = world2sketch point
         # determine point(s) to draw guide through
         x_candidate = nil
         z_candidate = nil
@@ -151,8 +151,8 @@ class SketchTool < Tool
     # draw guides as stippeled lines
     if $manager.use_sketch_guides
       [@x_guide, @z_guide].compact.each do |guide|
-        first = sketch2world(guide.first)
-        last = sketch2world( guide.last )
+        first = sketch2part(guide.first)
+        last = sketch2part( guide.last )
         GL.Enable GL::LINE_STIPPLE
         GL.LineWidth(2)
         GL.Enable GL::LINE_STIPPLE
@@ -167,7 +167,7 @@ class SketchTool < Tool
     end
     # draw dot at snap location
     if $manager.point_snap and @draw_dot
-      dot = sketch2world @draw_dot
+      dot = sketch2part @draw_dot
       GL.Color3f(1,0.3,0.1)
       GL.PointSize(8.0)
       GL.Begin( GL::POINTS )
@@ -179,22 +179,30 @@ class SketchTool < Tool
       GL.LineWidth(2)
       GL.Color3f(1,1,1)
       for v in seg.dynamic_points
-        v.take_coords_from sketch2world( v )
+        v.take_coords_from sketch2part( v )
       end
       seg.draw
       for v in seg.dynamic_points
-        v.take_coords_from world2sketch( v )
+        v.take_coords_from part2sketch( v )
       end
     end
     GL.Enable(GL::DEPTH_TEST)
   end
   
-  def world2sketch( v )
-    Tool.world2sketch( v, @sketch.plane.plane)
+  def part2sketch v
+    Tool.part2sketch( v, @sketch.plane.plane)
   end
   
-  def sketch2world( v )
-    Tool.sketch2world( v, @sketch.plane.plane)
+  def sketch2part v
+    Tool.sketch2part( v, @sketch.plane.plane)
+  end
+  
+  def sketch2world v
+    $manager.work_component.part2world sketch2part v
+  end
+  
+  def world2sketch v
+    part2sketch $manager.work_component.world2part v
   end
   
   def exit
@@ -530,9 +538,9 @@ class ConstrainTool < SketchTool
   
   def mouse_move( x,y )
     p = @glview.screen2world( x,y )
-    p, snapped = point_snapped(p) if p
+    p, snapped = point_snapped(world2sketch p) if p
     if snapped
-      @draw_dot = world2sketch p
+      @draw_dot = p
       @temp_segments = []
     else
       @draw_dot = nil
