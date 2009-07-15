@@ -760,7 +760,7 @@ msgstr ""
 msgid "Save changes to "
 msgstr ""
 
-#: lib/op_view.rb:26 lib/op_view.rb:92
+#: lib/ui/op_view.rb:26 lib/ui/op_view.rb:92
 msgid "Operators"
 msgstr ""
 

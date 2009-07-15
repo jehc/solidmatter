@@ -765,7 +765,7 @@ msgstr "Server im lokalen Netzwerk"
 msgid "Save changes to "
 msgstr "Änderungen sichern an "
 
-#: lib/op_view.rb:26 lib/op_view.rb:92
+#: lib/ui/op_view.rb:26 lib/ui/op_view.rb:92
 msgid "Operators"
 msgstr "Operatoren"
 
