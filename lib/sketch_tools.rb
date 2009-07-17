@@ -755,11 +755,13 @@ class TrimTool < SketchTool
         remains = sel.cut_at [@cut_seg.pos1, @cut_seg.pos2]
         remains.reject!{|s| s.midpoint == @cut_seg.midpoint }
         @replacement = [sel, remains]
+        @temp_segments = [@cut_seg, @intersections].flatten
         @glview.redraw
         return
       end
     end
     @cut_seg, @replacement = nil, nil
+    @temp_segments = []
     @glview.redraw
   end
   
@@ -774,17 +776,6 @@ class TrimTool < SketchTool
     @sketch.build_displaylist
     @cut_seg, @replacement = nil, nil
     @glview.redraw
-  end
-  
-  def draw
-    super
-    return unless @cut_seg
-    GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
-    GL.LineWidth(12)
-    @cut_seg.draw
-    for i in @intersections
-      i.draw
-    end
   end
 end
 
