@@ -445,6 +445,8 @@ public
         tool = EdgeSelectionTool.new( &block )
       when 'measure_distance'
         tool = MeasureDistanceTool.new( &block )
+      when 'plane'
+        tool = PlaneTool.new( &block )
       when 'line'
         tool = LineTool.new( @work_sketch, &block )
       when 'arc'

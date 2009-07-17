@@ -137,7 +137,7 @@ class OperatorSelectionTool < SelectionTool
     super
     mouse_move( x,y )
     if (dim = @glview.select(x,y)).is_a? Dimension
-      FloatingEntry.new( x,y, dim.value ) do |value| 
+      FloatingEntry.new( x,y, dim.value ) do |value, code| 
         dim.value = value
         $manager.work_component.build @op
         @glview.redraw
@@ -330,6 +330,87 @@ class PlaneSelectionTool < SelectionTool
   def exit
     $manager.work_component.working_planes.each{|plane| plane.visible = false }
     super
+  end
+end
+
+
+class PlaneTool < SelectionTool
+  def initialize
+    super GetText._("Pick one planar face or three points to define orientation:")
+    @points = []
+    @planestate = {}
+    @no_depth = true
+  end
+  
+  def selection_modes
+    [:faces, :planes]
+  end
+  
+  def click_left( x,y )
+    super
+    return if @no_selection_please
+    mouse_move( x,y )
+    @points << @draw_dot if @draw_dot
+    if @points.size == 3
+      @plane = WorkingPlane.new( $manager.work_component, Plane.from3points(*@points) )
+    else
+      @plane = WorkingPlane.new( $manager.work_component, @plane.plane.dup ) if @plane
+    end
+    if @plane
+      @plane.visible = true
+      $manager.work_component.working_planes << @plane
+      origin = @plane.plane.origin
+      @no_selection_please = true
+      FloatingEntry.new( x,y, 0.0 ) do |offset, code|
+        @plane.plane.origin = origin + @plane.plane.normal * offset
+        case code
+        when :ok
+          $manager.work_component.working_planes << @plane
+          $manager.cancel_current_tool
+          @plane.visible = true
+        when :cancel
+          $manager.cancel_current_tool
+          @plane.clean_up
+        end
+        @glview.redraw
+      end
+    end
+  end
+
+  def mouse_move( x,y )
+    super
+    return if @no_selection_please
+    unless sel = @glview.select(x,y, [:faces, :planes])
+      @plane = nil
+      @draw_dot = nil
+      @glview.redraw
+      return
+    end
+    comp = $manager.work_component
+    snap_points = comp.solid.faces.map{|f| f.segments.map{|s| s.snap_points } }.flatten
+    @draw_dot = nil
+    for p in snap_points
+      screen_pos = @glview.world2screen comp.part2world p
+      if Point.new(x, @glview.allocation.height - y).distance_to(screen_pos) < $preferences[:snap_dist]
+        @draw_dot = p
+        break
+      end
+    end
+    @plane = @draw_dot ? nil : sel if sel.is_a? PlanarFace
+    @glview.redraw
+  end
+  
+  def draw
+    super
+    GL.Color4f( 0.4, 0.2, 1.0, 0.5 )
+    #GL.Enable(GL::POLYGON_OFFSET_FILL)
+    @plane.draw if @plane.is_a? Face
+    #GL.Disable(GL::POLYGON_OFFSET_FILL)
+    puts "drawing face" if @plane.is_a? Face
+    @draw_dot.draw if @draw_dot
+    GL.Enable(GL::LIGHTING)
+    GL.CallList @plane.displaylist if @plane.is_a? WorkingPlane
+    puts "drwaing plane" if @plane.is_a? WorkingPlane
   end
 end
 

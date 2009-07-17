@@ -90,7 +90,7 @@ class Segment
           cut_segments[i] = seg.cut_at_point(p)
           cut_segments.flatten!
           cut_segments.compact!
-          retry
+          break
         end
       end
     end
@@ -584,13 +584,19 @@ class Plane
       u_vec = origin.vector_to(p2).normalize
       v_vec = origin.vector_to(p3).normalize
     end
-    Plane.new(origin, u_vec, v_vec)
+    p = Plane.new(origin, u_vec, v_vec)
+    p.orthonogalize!
   end
   
   def initialize( o=nil, u=nil, v=nil )
     @origin = o ? o : Vector[0.0, 0.0, 0.0]
     @u_vec  = u ? u.normalize : Vector[1.0, 0.0, 0.0]
     @v_vec  = v ? v.normalize : Vector[0.0, 0.0, 1.0]
+  end
+  
+  def orthonogalize!
+    @v_vec = @u_vec.cross_product normal
+    self
   end
   
   def normal_vector

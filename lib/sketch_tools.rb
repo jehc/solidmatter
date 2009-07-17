@@ -419,7 +419,7 @@ class DimensionTool < SketchTool
       @sketch.constraints << dim
       $manager.cancel_current_tool
       @glview.redraw
-      FloatingEntry.new( x,y, dim.value ) do |value| 
+      FloatingEntry.new( x,y, dim.value ) do |value, code| 
         dim.value = value
         @sketch.build_displaylist
         @glview.redraw
@@ -550,12 +550,6 @@ class ConstrainTool < SketchTool
     @glview.redraw
   end
   
-  def draw
-    super
-    GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
-    GL.LineWidth(12)
-  end
-  
   def exit
     super
     @chooser.destroy if @chooser and not @chooser.destroyed?
@@ -624,7 +618,7 @@ class EditSketchTool < SketchTool
           @selection = [sel]
         end
       when Dimension
-        FloatingEntry.new( x,y, sel.value ) do |value| 
+        FloatingEntry.new( x,y, sel.value ) do |value, code| 
           sel.value = value
           @sketch.build_displaylist
           @glview.redraw

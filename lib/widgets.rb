@@ -201,9 +201,9 @@ class FloatingEntry < FloatingWidget
     ok_btn.has_default = true
     self.default = ok_btn
     # connect actions
-    ok_btn.signal_connect('clicked'){ yield entry.value if block_given? ; destroy }
-    cancel_btn.signal_connect('clicked'){ yield value ; destroy }
-    entry.on_change_value{ yield entry.value if block_given? }
+    ok_btn.signal_connect('clicked'){ yield entry.value, :ok if block_given? ; destroy }
+    cancel_btn.signal_connect('clicked'){ yield value, :cancel ; destroy }
+    entry.on_change_value{ yield entry.value, :changed if block_given? }
     true
   end
 end

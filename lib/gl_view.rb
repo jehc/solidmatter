@@ -947,8 +947,8 @@ class GLView < Gtk::DrawingArea
     GC.disable if $preferences[:manage_gc]
     if $preferences[:view_transitions]
       @cameras.insert( @current_cam_index, Camera.new )
-      stepsize = 8.0 / $preferences[:transition_duration]
-      -4.step(4, stepsize) do |x|
+      stepsize = 10.0 / $preferences[:transition_duration]
+      -5.step(5, stepsize) do |x|
         s = 1 / (1 + Math::E**-x)
         @cameras[@current_cam_index].position = from_cam.position * (1 - s)  +  to_cam.position * s
         @cameras[@current_cam_index].target   = from_cam.target   * (1 - s)  +  to_cam.target   * s

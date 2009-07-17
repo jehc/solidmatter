@@ -299,6 +299,30 @@ class Solid
     tris
   end
   
+  def boolean_union
+    
+  end
+  
+  def boolean_subtraction
+    
+  end
+  
+  def boolean_difference
+    
+  end
+  
+  def intersections_with other
+    cut_faces = []
+    for f1 in @faces
+      for f2 in other.faces
+        curve = f1.intersection_with f2
+        cut_faces += f1.cut_with curve
+        cut_faces += f2.cut_with curve
+      end
+    end
+    cut_faces
+  end
+  
   def dup
     copy = super
     copy.faces = faces.dup#map{|f| f.dup }
@@ -311,7 +335,7 @@ end
 class Operator
   include Units
   attr_reader :settings, :solid, :part, :dimensions
-  attr_accessor :name, :enabled, :previous#, :toolbar
+  attr_accessor :name, :enabled, :previous
   def initialize part
     @name ||= "operator"
     @settings ||= {:loops => []}
