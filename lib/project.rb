@@ -74,13 +74,10 @@ class Project
   
   def rebuild
     glv = $manager.glview
-    @all_sketches.each do |sk| 
-      sk.displaylist = glv.add_displaylist
-      sk.build_displaylist
-    end
+    # refetch all part displaylists and rebuild them completely
     progress = ProgressDialog.new
     progress.fraction = 0.0
-    num_ops = @all_parts.map{|p| p.operators}.flatten.size
+    num_ops = @all_parts.map(&:operators).flatten.size
     op_i = 1
     increment = 1.0 / num_ops
     @all_parts.each do |p| 
@@ -89,13 +86,20 @@ class Project
       p.selection_displaylist = glv.add_displaylist
       p.build do |op| 
         progress.fraction += increment
-        progress.text = GetText._("Rebuilding operator ") + "'#{op.name}' (#{op_i}/#{num_ops})" 
+        progress.text = GetText._("Rebuilding operator ") + "'#{op.name}' (#{op_i}/#{num_ops})"
         op_i += 1
       end
-      p.working_planes.each do |pl| 
-        pl.displaylist = glv.add_displaylist
-        pl.build_displaylists
-      end
+    end
+    # refetch working plane displaylists
+    (p.working_planes + @all_sketches.map(&:plane)).each do |pl| 
+      pl.displaylist = glv.add_displaylist
+      pl.pick_displaylist = glv.add_displaylist
+      pl.build_displaylists
+    end
+    # refetch sketch displaylists
+    @all_sketches.each do |sk| 
+      sk.displaylist = glv.add_displaylist
+      sk.build_displaylist
     end
     progress.close
   end
