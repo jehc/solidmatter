@@ -260,9 +260,11 @@ class GroundPlane
   
   def draw
     if @g_plane and $manager.glview.cameras[$manager.glview.current_cam_index].position.y > @g_plane.origin.y
-      draw_reflection if $manager.glview.render_reflections and not [:wireframe, :hidden_lines].any?{|m| $manager.glview.displaymode == m }
-      draw_floor
-      draw_shadow if $manager.glview.render_shadows and not [:wireframe, :hidden_lines].any?{|m| $manager.glview.displaymode == m }
+      unless [:wireframe, :hidden_lines].any?{|m| $manager.glview.displaymode == m }
+        draw_reflection if $manager.glview.render_reflections
+        draw_floor if $manager.glview.render_reflections or $manager.glview.render_shadows
+        draw_shadow if $manager.glview.render_shadows
+      end
     end
   end
   

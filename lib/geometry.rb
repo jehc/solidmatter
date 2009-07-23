@@ -79,7 +79,7 @@ class Segment
   end
   
   def bounding_box
-    bounding_box_from snap_points.map{|p| $manager.work_component.part2world Tool.sketch2part(p, @sketch.plane.plane) }
+    bounding_box_from snap_points.map{|p| $manager.work_component.part2world @sketch.plane.plane.plane2part p }
   end
   
   def cut_at points
@@ -631,6 +631,19 @@ class Plane
     when Vector
       @u_vec * segment.x + normal * segment.y + @v_vec * segment.z + @origin
     end
+  end
+  
+  def part2plane v
+    v = closest_point v
+    pl_un = Plane.new( Vector[0,0,0], @u_vec, normal )
+    p = pl_un.closest_point v
+    x = @origin.distance_to p
+    x = -x unless (@origin + @u_vec * x).near_to p
+    pl_vn = Plane.new( Vector[0,0,0], @v_vec, normal )
+    p = pl_vn.closest_point v
+    z = @origin.distance_to p
+    z = -z unless (@origin + @v_vec * z).near_to p
+    Vector[x,0,z]
   end
   
   def transform_like plane

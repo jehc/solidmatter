@@ -72,7 +72,7 @@ class PlanarFace < Face
   
   def draw
     pretesselate unless @polygon
-    normal = @plane.normal_vector.invert
+    normal = @plane.normal_vector#.invert
     GL.Normal( normal.x, normal.y, normal.z )
     tess = GLU::NewTess()
     GLU::TessCallback( tess, GLU::TESS_VERTEX, lambda{|v| GL::Vertex v if v} )
@@ -93,6 +93,13 @@ class PlanarFace < Face
       GLU::TessEndContour tess
     GLU::TessEndPolygon tess
     GLU::DeleteTess tess
+    # draw normal
+    # center = @polygon.points.inject{|sum, p| sum + p } / @polygon.points.size
+    # ntip = center + normal * 0.05
+    # GL.Begin( GL::LINES )
+    #   GL.Vertex( center.x, center.y, center.z )
+    #   GL.Vertex( ntip.x, ntip.y, ntip.z )
+    # GL.End
   end
   
   def tesselate

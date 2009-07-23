@@ -62,17 +62,17 @@ class ExtrudeOperator < Operator
           @new_faces << face
         end
         # build caps
-        loop = loop.map{|s| s.dup }.flatten
+        loop = loop.map{|s| s.dup }#.flatten
         #loop = loop.map{|s| s.tesselate }.flatten
         lower_cap = PlanarFace.new
-        lower_cap.plane.u_vec = sketch.plane.plane.u_vec
+        lower_cap.plane.u_vec = sketch.plane.plane.u_vec.invert
         lower_cap.plane.v_vec = sketch.plane.plane.v_vec
         lower_cap.segments = loop.map{|s| s + origin } #Line.new(s.pos1 + origin, s.pos2 + origin) }
         lower_cap.plane.origin = origin.dup #lower_cap.segments.first.snap_points.first.dup
         @solid.add_face lower_cap
         @new_faces << lower_cap
         upper_cap = PlanarFace.new
-        upper_cap.plane.u_vec = sketch.plane.plane.u_vec.invert
+        upper_cap.plane.u_vec = sketch.plane.plane.u_vec
         upper_cap.plane.v_vec = sketch.plane.plane.v_vec
         upper_cap.segments = loop.map{|s| s + (origin + direction) } #Line.new(s.pos1 + origin + direction, s.pos2 + origin + direction) }
         upper_cap.plane.origin = origin + direction #upper_cap.segments.first.snap_points.first.dup

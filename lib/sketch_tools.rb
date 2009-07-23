@@ -194,7 +194,7 @@ class SketchTool < Tool
   end
   
   def sketch2part v
-    Tool.sketch2part( v, @sketch.plane.plane)
+    @sketch.plane.plane.plane2part v
   end
   
   def sketch2world v

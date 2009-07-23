@@ -223,7 +223,7 @@ class RegionSelectionTool < SelectionTool
         face = PlanarFace.new
         face.plane = sketch.plane.plane
         sketch.plane.build_displaylists
-        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(Tool.sketch2part(seg.pos1, sketch.plane.plane), Tool.sketch2part(seg.pos2, sketch.plane.plane), sketch)  }
+        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(sketch.plane.plane.plane2part(seg.pos1), sketch.plane.plane.plane2part(seg.pos2), sketch)  }
         Region.new(chain, poly, face)
       end
     end
@@ -295,7 +295,7 @@ class RegionSelectionTool < SelectionTool
     planestate = plane.visible
     plane.visible = true
     pos = @glview.screen2world( x,y )
-    pos = Tool.part2sketch( pos, plane.plane ) if pos
+    pos = Tool.part2sketch( $manager.work_component.world2part(pos), plane.plane ) if pos
     plane.visible = planestate
     return pos
   end
@@ -455,12 +455,12 @@ class EdgeSelectionTool < SelectionTool
   def initialize
     super GetText._("Select edges:")
     @no_depth = true
-    @op_sketch = $manager.work_operator.settings[:sketch]
+    @op_sketch = $manager.work_operator.settings[:sketch] if $manager.work_operator
     @op_sketch.visible = true if @op_sketch
   end
   
   def selection_modes
-    $manager.work_operator.is_a?(RevolveOperator) ? [:segments] : [:edges]
+    [:segments, :edges]
   end
   
   def click_left( x,y )
