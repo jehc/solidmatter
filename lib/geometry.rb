@@ -59,7 +59,8 @@ class InfiniteLine
   def intersect_with plane
     po, pn = plane.origin, plane.normal
     t = (po - @pos).dot_product(pn) / @dir.dot_product(pn)
-    @pos + (@dir * t)
+    # check if we really intersect
+    t.infinite? ? nil : (@pos + @dir * t)
   end
 end
 
@@ -125,6 +126,13 @@ class Vector # should be discarded in favor of point
     GL.Begin( GL::POINTS )
       GL.Vertex( x,y,z )
     GL.End
+  end
+  
+  def dup
+    copy = super
+    copy.constraints = []
+    copy.segment = nil
+    copy
   end
 end
 
@@ -713,7 +721,7 @@ class Polygon
     samples.times do
       x = left + rand * (right-left).abs
       z = lower + rand * (upper-lower).abs
-      a += 1 if contains? Vector[x,z,0]
+      a += 1 if contains? Vector[x,0,z]
     end
     (a / samples) * (right-left).abs * (upper-lower).abs
   end
@@ -734,7 +742,7 @@ class Polygon
           left_dist = (e1.x - point.x).abs
           right_dist = (e2.x - point.x).abs
           intersection_point = (e1 * right_dist + e2 * left_dist) * (1.0 / (left_dist + right_dist))
-          intersections += 1 if intersection_point.z > point.y
+          intersections += 1 if intersection_point.z > point.z
         end
       end
       return intersections % 2 != 0

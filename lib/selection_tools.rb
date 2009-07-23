@@ -268,7 +268,7 @@ class RegionSelectionTool < SelectionTool
       sel = @glview.select(x,y, [:planes])
       sketch.plane.visible = false
       if sel and pos = pos_of( x,y, sel )
-        @current_region = @regions.select{|r| r.face.plane == sel.plane and r.poly.contains? Point.new( pos.x, pos.z ) }.first
+        @current_region = @regions.select{|r| r.face.plane == sel.plane and r.poly.contains? pos }.first
         @glview.redraw
         break if @current_region
       end

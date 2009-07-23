@@ -272,10 +272,10 @@ class Solid
     for f in @faces.select{|f| f.is_a? PlanarFace } #XXX should work for all faces
       sect = l.intersect_with f.plane
       # only consider the ray going in one direction
-      if sect.y > p.y
+      if sect and sect.y > p.y
         # check if within bounds of face
-        #sect = Tool.part2sketch( sect, f.plane )
-        sect = Point.new( sect.x, sect.z )
+        sect = f.plane.part2plane sect
+        #sect = Point.new( sect.x, sect.z )
         intersections += 1 if f.polygon.contains? sect
       end
     end
@@ -358,7 +358,7 @@ class Operator
   def operate
     if @previous
       @solid = @previous.solid ? @previous.solid.dup : nil
-      segs = @settings[:loops].flatten
+      segs = @settings[:loops].flatten if @settings[:loops]
       if segs
         sketches = segs.map{|seg| seg.sketch }.compact.uniq
         sketches.each{|sk| sk.refetch_plane_from_solid @previous.solid }

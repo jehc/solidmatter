@@ -32,11 +32,14 @@ class ExtrudeOperator < Operator
         return []
       end
       @settings[:loops] = loops
-      # create face in extrusion direction for every segment
+      # calculate extrusion vector
       direction = sketch.plane.plane.normal_vector * @settings[:depth] * (@settings[:direction] == :up ? 1 : -1)
       # make sure we are in part coordinate space
       origin = sketch.plane.plane.origin
+      # create separate extrusion body for every loop
       for loop in loops
+        # create helper poly for checking normal direction
+        poly = Polygon.from_chain( sketch.chain(loop.first, loop) )
         for seg in loop
           case seg
           when Line
@@ -52,7 +55,12 @@ class ExtrudeOperator < Operator
             face.segments = segs
             face.plane.u_vec = corner1.vector_to( corner2 ).normalize
             face.plane.v_vec = corner1.vector_to( corner4 ).normalize
-            face.plane.origin = corner1
+            face.plane.origin = (seg.pos1 + seg.pos2) / 2.0
+            # check/correct normal direction
+            ntip = face.plane.origin + face.plane.normal * 0.0001
+            tip_on_plane =  ntip - origin
+            face.plane.u_vec.reverse! if poly.contains? tip_on_plane
+            puts "reversing face" if poly.contains? tip_on_plane
           when Arc2D
             plane = sketch.plane.plane.dup
             plane.origin = seg.center + origin
