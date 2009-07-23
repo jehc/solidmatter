@@ -60,7 +60,6 @@ class ExtrudeOperator < Operator
             ntip = face.plane.origin + face.plane.normal * 0.0001
             tip_on_plane =  ntip - origin
             face.plane.u_vec.reverse! if poly.contains? tip_on_plane
-            puts "reversing face" if poly.contains? tip_on_plane
           when Arc2D
             plane = sketch.plane.plane.dup
             plane.origin = seg.center + origin

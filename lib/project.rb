@@ -91,7 +91,7 @@ class Project
       end
     end
     # refetch working plane displaylists
-    (p.working_planes + @all_sketches.map(&:plane)).each do |pl| 
+    (@all_parts.map(&:working_planes).flatten + @all_sketches.map(&:plane)).each do |pl| 
       pl.displaylist = glv.add_displaylist
       pl.pick_displaylist = glv.add_displaylist
       pl.build_displaylists
