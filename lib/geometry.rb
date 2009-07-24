@@ -643,11 +643,11 @@ class Plane
   
   def part2plane v
     v = closest_point v
-    pl_un = Plane.new( Vector[0,0,0], @u_vec, normal )
+    pl_un = Plane.new( @origin, @u_vec, normal )
     p = pl_un.closest_point v
     x = @origin.distance_to p
     x = -x unless (@origin + @u_vec * x).near_to p
-    pl_vn = Plane.new( Vector[0,0,0], @v_vec, normal )
+    pl_vn = Plane.new( @origin, @v_vec, normal )
     p = pl_vn.closest_point v
     z = @origin.distance_to p
     z = -z unless (@origin + @v_vec * z).near_to p
@@ -655,9 +655,9 @@ class Plane
   end
   
   def transform_like plane
-      @origin = plane.origin
-      @u_vec = plane.u_vec
-      @v_vec = plane.v_vec
+    @origin = plane.origin
+    @u_vec = plane.u_vec
+    @v_vec = plane.v_vec
   end
   
   def dup

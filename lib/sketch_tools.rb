@@ -190,7 +190,7 @@ class SketchTool < Tool
   end
   
   def part2sketch v
-    Tool.part2sketch( v, @sketch.plane.plane)
+    @sketch.plane.plane.part2plane v
   end
   
   def sketch2part v

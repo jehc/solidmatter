@@ -252,7 +252,13 @@ class Sketch
             GL.Color3f( @@sketchcolor[0], @@sketchcolor[1], @@sketchcolor[2] )
           end
         end
+        for v in seg.dynamic_points
+          v.take_coords_from @plane.plane.plane2part v
+        end
         seg.draw
+        for v in seg.dynamic_points
+          v.take_coords_from @plane.plane.part2plane v
+        end
       end
     GL.EndList  
   end

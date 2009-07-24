@@ -295,7 +295,7 @@ class RegionSelectionTool < SelectionTool
     planestate = plane.visible
     plane.visible = true
     pos = @glview.screen2world( x,y )
-    pos = Tool.part2sketch( $manager.work_component.world2part(pos), plane.plane ) if pos
+    pos = plane.plane.part2plane $manager.work_component.world2part pos if pos
     plane.visible = planestate
     return pos
   end

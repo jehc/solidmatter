@@ -16,11 +16,6 @@ class Tool
     resume
   end
 public
-  def self.part2sketch( v, plane ) #XXX should be merged into Plane class
-    o = plane.origin
-    v - o
-    plane.part2plane v
-  end
 
   def click_left( x,y )
     $manager.has_been_changed = true

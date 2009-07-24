@@ -756,7 +756,7 @@ class GLView < Gtk::DrawingArea
       ### ------------------------- Sketch ------------------------- ###
       elsif top_comp.class == Sketch
         recurse_draw top_comp.plane
-        GL.Translate( top_comp.plane.plane.origin.x, top_comp.plane.plane.origin.y, top_comp.plane.plane.origin.z )
+        #GL.Translate( top_comp.plane.plane.origin.x, top_comp.plane.plane.origin.y, top_comp.plane.plane.origin.z )
         GL.Disable(GL::LIGHTING)
         if @selection_pass
           top_comp.selection_pass = true
@@ -776,7 +776,8 @@ class GLView < Gtk::DrawingArea
         c = top_comp.selection_pass_color
         GL.Color3f( c[0],c[1],c[2] ) if c
         GL.Disable(GL::POLYGON_OFFSET_FILL)
-        GL.CallList( (@picking_pass or (@selection_pass and (@selection_pass.include? :planes or @selection_pass.include? :faces))) ? top_comp.pick_displaylist : top_comp.displaylist )
+        GL.CallList( (@picking_pass or (@selection_pass and (@selection_pass.include? :planes or @selection_pass.include? :faces))) ? 
+                      top_comp.pick_displaylist : top_comp.displaylist )
         GL.Enable(GL::POLYGON_OFFSET_FILL)
       ### ---------------------- Sketch constraint ---------------------- ###
       elsif top_comp.is_a? SketchConstraint
