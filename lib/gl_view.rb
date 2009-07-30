@@ -112,6 +112,7 @@ end
 
 
 class GroundPlane
+  attr_accessor :visible
   attr_reader :dirty, :g_plane
   def initialize res_x=32, res_y=32
     @res_x, @res_y = res_x, res_y
@@ -122,6 +123,7 @@ class GroundPlane
     GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL_LINEAR )
     GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_WRAP_S, GL::CLAMP )
     GL.TexParameterf( GL::TEXTURE_2D, GL::TEXTURE_WRAP_T, GL::CLAMP )
+    @visible = true
     clean_up
   end
   
@@ -688,7 +690,7 @@ class GLView < Gtk::DrawingArea
           glEnable(GL_DEPTH_TEST)
         end
       end
-      @ground.draw unless @selection_pass or @picking_pass
+      @ground.draw unless @selection_pass or @picking_pass and ground.visible
   end
   
   def draw_part p
@@ -1120,6 +1122,8 @@ class GLView < Gtk::DrawingArea
   
   def screenshot( step=8, x=0, y=0, width=allocation.width, height=allocation.height )
     old_mode = @displaymode
+    visible = @ground.visible
+    @ground.visible = false
     set_displaymode :shaded
     iwidth = width / step
     iheight = height / step
@@ -1138,6 +1142,7 @@ class GLView < Gtk::DrawingArea
       ix += 1
       iy = iheight-1
     end
+    @ground.visible = visible
     set_displaymode old_mode
     return im
   end
