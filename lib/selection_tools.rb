@@ -84,7 +84,7 @@ class PartSelectionTool < SelectionTool
     pos = @glview.pos_on_plane_through_point( x,y, @drag_start )
     dir = @drag_start.vector_to pos
     @comp_to_move.position = @start_pos + dir
-    @glview.ground.dirty = true
+    $manager.has_been_changed = true
     @glview.redraw
   end
   

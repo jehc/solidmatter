@@ -108,7 +108,7 @@ public
   end
   
   def correct_title
-    file = @filename ? "(#{@filename})" : GetText._("<not saved>")
+    file = @project.filename ? "(#{@project.filename})" : GetText._("<not saved>")
     previous_dir = Dir.pwd
     Dir.chdir
     file.gsub!( Dir.pwd, '~')
@@ -135,7 +135,6 @@ public
       @project = Project.new
       @work_component = @project.main_assembly
       @work_sketch = nil
-      @filename = nil
       self.has_been_changed = false
       @op_view.set_base_component( @project.main_assembly ) if @op_view
       @toolstack = [ PartSelectionTool.new ] if @glview
