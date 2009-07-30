@@ -690,7 +690,7 @@ class GLView < Gtk::DrawingArea
           glEnable(GL_DEPTH_TEST)
         end
       end
-      @ground.draw unless @selection_pass or @picking_pass and ground.visible
+      @ground.draw if ground.visible and not (@selection_pass or @picking_pass)
   end
   
   def draw_part p
