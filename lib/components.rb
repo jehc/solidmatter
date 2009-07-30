@@ -430,15 +430,7 @@ class Component
     @component_id = Component.new_id
     @thumbnail = nil
   end
-=begin
-  def thumbnail
-    @thumbnail ? @thumbnail.to_native : nil
-  end
-  
-  def thumbnail= im
-   @thumbnail = im.to_tiny
-  end
-=end
+
   def draw_cog
     if @cog
       qobj = GLU.NewQuadric
@@ -710,7 +702,7 @@ class Assembly < Component
   end
   
   def area
-    @components.inject(0.0){|area,c| area + c.area }
+    @components.inject{|area, c| area + c.area }
   end
   
   def volume_mass_and_cog

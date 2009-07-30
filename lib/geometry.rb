@@ -541,7 +541,7 @@ class Spline < Segment
       # register callbacks
       GLU.NurbsCallback( nurb, GLU::NURBS_BEGIN, lambda{ } )
       GLU.NurbsCallback( nurb, GLU::NURBS_END, lambda{ } )
-      GLU.NurbsCallback( nurb, GLU::NURBS_VERTEX, lambda{|v| puts "hooray"; tess_vertices << Vector[v[0],v[1],v[2]] if v } )
+      GLU.NurbsCallback( nurb, GLU::NURBS_VERTEX, lambda{|v| tess_vertices << Vector[v[0],v[1],v[2]] if v } )
       GLU.NurbsCallback( nurb, GLU::NURBS_ERROR, lambda{|errCode| raise "Nurbs tessellation Error: #{GLU::ErrorString errCode}" } )
       # tesselate curve
       GLU.BeginCurve nurb
@@ -627,8 +627,8 @@ class Plane
   
   def plane2part segment
     case segment
-    when Line
-      Line.new( plane2part(segment.pos1), plane2part(segment.pos2))
+    # when Line
+    #   Line.new( plane2part(segment.pos1), plane2part(segment.pos2))
 #    when Arc2D
 #      pl = Plane.new
 #      Arc3D.new( plane2part(segment.center), 
@@ -636,6 +636,10 @@ class Plane
 #               segment.start_angle,
 #               segment.end_angle,
 #               segment.plane.dup || segment.sketch.plane.dup)
+    when Segment
+      s = segment.dup
+      s.dynamic_points.each{|p| p.take_coords_from plane2part p }
+      s
     when Vector
       @u_vec * segment.x + normal * segment.y + @v_vec * segment.z + @origin
     end
