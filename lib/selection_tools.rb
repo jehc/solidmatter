@@ -481,7 +481,11 @@ class EdgeSelectionTool < SelectionTool
   def draw
     super
     GL.Color4f( 0.9, 0.2, 0.0, 0.5 )
-    @current_edge.draw if @current_edge
+    if @current_edge
+      edge = @current_edge
+      edge = edge.sketch.plane.plane.plane2part edge if edge.sketch
+      edge.draw
+    end
   end
   
   def resume
