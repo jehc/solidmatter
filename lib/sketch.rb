@@ -159,24 +159,29 @@ module ChainCompletion
         end
       end
     end
-    return (pos.near_to segment.pos1) ? chain : nil
+    [chain, (pos.near_to segment.pos1) ? :closed : nil]
   end
   
-  def all_chains
+  def loop( segment, segments=@segments )
+    ch, closed = chain( segment, segments )
+    closed ? ch : nil   
+  end
+  
+  def all_loops
     return [] if @segments.empty?
-    chains = []
+    loops = []
     segs = @segments.dup
     begin
-      kette = chain( segs.first, segs )
-      chains.push kette
+      kette = loop( segs.first, segs )
+      loops.push kette
       segs = segs - kette if kette
     end until segs.empty? or not kette
-    #puts "#{chains.compact.size} chains found"
-    return chains.compact
+    #puts "#{loops.compact.size} loops found"
+    return loops.compact
   end
   
   def ordered_polygons
-    polygons = all_chains.map{|ch| Polygon::from_chain ch.map{|seg| seg.tesselate }.flatten }
+    polygons = all_loops.map{|ch| Polygon::from_loop ch.map{|seg| seg.tesselate }.flatten }
     contained_in = {}
     depth = 0
     # check each poly for in how many others it is contained

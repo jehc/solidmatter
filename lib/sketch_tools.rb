@@ -719,7 +719,7 @@ class EditSketchTool < SketchTool
     super
     sel = @glview.select( x,y )
     if sel
-      @selection = sel.sketch.chain( sel )
+      @selection = sel.sketch.loop( sel )
       if @selection
         $manager.selection.select *@selection
         sel.sketch.build_displaylist

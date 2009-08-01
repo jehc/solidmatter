@@ -51,16 +51,38 @@ end
 
 
 class InfiniteLine
+  attr_accessor :pos, :dir
   def initialize( pos, dir )
     @pos = pos
     @dir = dir
   end
   
-  def intersect_with plane
-    po, pn = plane.origin, plane.normal
-    t = (po - @pos).dot_product(pn) / @dir.dot_product(pn)
-    # check if we really intersect
-    t.infinite? ? nil : (@pos + @dir * t)
+  def intersect_with obj
+    case obj
+    when Plane
+      po, pn = plane.origin, plane.normal
+      t = (po - @pos).dot_product(pn) / @dir.dot_product(pn)
+      # check if we really intersect
+      t.infinite? ? nil : (@pos + @dir * t)
+    when InfiniteLine
+      return nil if dir.parallel_to? obj.dir
+      #XXX in 3d we need to check if distance to obj is zero as well
+      d = dir
+      e = obj.dir
+      n = d.cross_product e
+      sr = @pos.vector_to obj.pos
+      if n.z.abs > n.x.abs and n.z.abs > n.y.abs
+        t = (sr.x * e.y - rs.y * e.x) / n.z
+        u = (sr.x * d.y - rs.y * d.x) / n.z
+      elsif n.x.abs > n.y.abs
+        t = (sr.y * e.z - rs.z * e.y) / n.x
+        u = (sr.y * d.z - rs.z * d.y) / n.x
+      else
+        t = (sr.z * e.x - sr.x * e.z) / n.y
+        u = (sr.z * d.x - sr.x * d.z) / n.y
+      end
+      @pos + d * t
+    end
   end
 end
 
@@ -235,23 +257,8 @@ class Line < Segment
   def intersections_with other
     case other
     when Line
-      return [] if parallel_to? other
-      #XXX in 3d we need to check if distance to other is zero as well
-      d = self.to_vec
-      e = other.to_vec
-      n = d.cross_product e
-      sr = @pos1.vector_to other.pos1
-      if n.z.abs > n.x.abs and n.z.abs > n.y.abs
-        t = (sr.x * e.y - rs.y * e.x) / n.z
-        u = (sr.x * d.y - rs.y * d.x) / n.z
-      elsif n.x.abs > n.y.abs
-        t = (sr.y * e.z - rs.z * e.y) / n.x
-        u = (sr.y * d.z - rs.z * d.y) / n.x
-      else
-        t = (sr.z * e.x - sr.x * e.z) / n.y
-        u = (sr.z * d.x - sr.x * d.z) / n.y
-      end
-      p = @pos1 + d * t
+      p = InfiniteLine.new( @pos1, @pos1.vector_to(@pos2) ).intersect_with InfiniteLine.new( other.pos1, other.pos1.vector_to(other.pos2) )
+      return [] unless p
       # check if p lies on both segments
       for seg in [self, other]
         return [] unless seg.touches?( p, true )
@@ -676,13 +683,13 @@ end
 
 class Polygon
   attr_accessor :points
-  def Polygon::from_chain chain
-    redundant_chain_points = chain.map{|s| s.tesselate }.flatten.map{|line| [line.pos1, line.pos2] }.flatten
-    chain_points = []
-    for p in redundant_chain_points #XXX this should be possible with .uniq
-      chain_points.push p unless chain_points.include? p
+  def Polygon::from_loop loop
+    redundant_loop_points = loop.map{|s| s.tesselate }.flatten.map{|line| [line.pos1, line.pos2] }.flatten
+    loop_points = []
+    for p in redundant_loop_points #XXX this should be possible with .uniq
+      loop_points.push p unless loop_points.include? p
     end
-    poly = Polygon.new( chain_points )
+    poly = Polygon.new( loop_points )
     poly.close
     return poly
   end

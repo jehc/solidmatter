@@ -208,7 +208,7 @@ class OperatorSelectionTool < SelectionTool
 end
 
 
-Region = Struct.new(:chain, :poly, :face)
+Region = Struct.new(:loop, :poly, :face)
 class RegionSelectionTool < SelectionTool
   attr_accessor :selection
   def initialize
@@ -218,13 +218,13 @@ class RegionSelectionTool < SelectionTool
     @op_sketch = $manager.work_operator.settings[:sketch]
     @all_sketches = ($manager.work_component.unused_sketches + [@op_sketch]).compact
     @regions = @all_sketches.inject([]) do |regions, sketch|
-      regions + sketch.all_chains.reverse.map do |chain|
-        poly = Polygon.from_chain chain #.map{|seg| seg.tesselate }.flatten
+      regions + sketch.all_loops.reverse.map do |loop|
+        poly = Polygon.from_loop loop #.map{|seg| seg.tesselate }.flatten
         face = PlanarFace.new
         face.plane = sketch.plane.plane
         sketch.plane.build_displaylists
-        face.segments = chain.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(sketch.plane.plane.plane2part(seg.pos1), sketch.plane.plane.plane2part(seg.pos2), sketch)  }
-        Region.new(chain, poly, face)
+        face.segments = loop.map{|seg| seg.tesselate }.flatten.map{|seg| Line.new(sketch.plane.plane.plane2part(seg.pos1), sketch.plane.plane.plane2part(seg.pos2), sketch)  }
+        Region.new(loop, poly, face)
       end
     end
     @regions.compact!
@@ -249,13 +249,13 @@ class RegionSelectionTool < SelectionTool
     mouse_move( x,y )
     if @current_region
       if $manager.key_pressed? :Shift
-        if @selection.include? @current_region.chain
-          @selection.delete @current_region.chain
+        if @selection.include? @current_region.loop
+          @selection.delete @current_region.loop
         else
-          @selection.push @current_region.chain
+          @selection.push @current_region.loop
         end
       else
-        @selection = [@current_region.chain]
+        @selection = [@current_region.loop]
         $manager.cancel_current_tool
       end
     end
@@ -285,7 +285,7 @@ class RegionSelectionTool < SelectionTool
     end
     unless @selection.empty?
       GL.Color4f( 0.2, 0.5, 0.8, 0.5 )
-      regions = @regions.select{|r| @selection.include? r.chain }
+      regions = @regions.select{|r| @selection.include? r.loop }
       regions.each{|r| r.face.draw }
     end
     GL.Enable(GL::POLYGON_OFFSET_FILL)

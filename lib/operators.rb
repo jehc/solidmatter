@@ -24,7 +24,7 @@ class ExtrudeOperator < Operator
     if @solid and loops and not loops.empty?
       # some segments of the defining regions might have changed, so we refresh the loops
       sketch = loops.first.first.sketch
-      loops = sketch.all_chains.select do |ch| 
+      loops = sketch.all_loops.select do |ch| 
         loops.any?{|l| l.any?{|seg| ch.include? seg } }
       end
       if loops.empty?
@@ -39,7 +39,7 @@ class ExtrudeOperator < Operator
       # create separate extrusion body for every loop
       for loop in loops
         # create helper poly for checking normal direction
-        poly = Polygon.from_chain( sketch.chain(loop.first, loop) )
+        poly = Polygon.from_loop( sketch.loop(loop.first, loop) )
         for seg in loop
           case seg
           when Line
@@ -215,7 +215,7 @@ class RevolveOperator < Operator
     if axis and @solid and loops and not loops.empty?
       # some segments of the defining regions might have changed, so we refresh the loops
       sketch = loops.first.first.sketch
-      loops = sketch.all_chains.select do |ch| 
+      loops = sketch.all_loops.select do |ch| 
         loops.any?{|l| l.any?{|seg| ch.include? seg } }
       end
       if loops.empty?

@@ -167,7 +167,7 @@ class GroundPlane
                 seg
               end
               face_dist /= face.segments.size
-              poly = Polygon::from_chain planar_loop
+              poly = Polygon::from_loop planar_loop
               wx = g_plane.origin.x - g_width/2.0  + (x.to_f/@res_y)*g_width
               wz = g_plane.origin.z - g_depth/2.0  + (y.to_f/@res_y)*g_depth
               if poly.contains? Vector[wx,0,wz]

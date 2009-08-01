@@ -35,7 +35,7 @@ class Face
   end
   
   def draw
-    raise "Face #{self} cannot draw itself"
+    raise "#{self.class} cannot draw itself"
   end
   
   def area
@@ -44,6 +44,14 @@ class Face
   
   def tesselate
     []
+  end
+  
+  def intersections_with other
+    raise "#{self.class} does not implement intersections"
+  end
+  
+  def cut_at curve
+    raise "#{self.class} does not implement trimming"
   end
   
   def dup
@@ -62,11 +70,11 @@ class PlanarFace < Face
   end
   
   def pretesselate
-    ch = chain( @segments.first )
+    ch = loop( @segments.first )
     if ch
-      @polygon = Polygon.from_chain( ch ).to_cw!
+      @polygon = Polygon.from_loop( ch ).to_cw!
     else
-      raise "Trying to build face #{self} from non-closed segment chain"
+      raise "Trying to build face #{self} from non-closed segment loop"
     end
   end
   
@@ -105,6 +113,50 @@ class PlanarFace < Face
   def tesselate
     @polygon or pretesselate
     @polygon.tesselate
+  end
+  
+  def intersections_with other
+    case other
+    when PlanarFace
+      # generate arbitrary point on planes
+      p = InfiniteLine.new( Vector[0,0,0], @plane.u_vec ).intersect_with(other.plane) || InfiniteLine.new( Vector[0,0,0], @plane.v_vec ).intersect_with(other.plane)
+      # calculate intersection between infinite planes
+      infinite_intersection = InfiniteLine.new( p, @plane.normal.cross_product(other.plane.normal) )
+      # intersect with boundary segments to find finite intersection line
+      Line.new( *@segments.map{|s| infinite_intersection.intersect_with s }.compact )
+    else
+      []
+    end
+  end
+  
+  def cut_at line
+    # cut all intersecting segments 
+    segments = @segments.dup
+    new_pairs = []
+    segments.each_with_index do |s, i|
+      for p in [line.pos1, line.pos2]
+        if s.touches?(p, true)
+          segments[i] = s.cut_at_point p
+          new_pairs << segments[i]
+        end
+      end
+    end
+    segments.flatten!
+    # rebuild loops for new faces
+    loop, closed = loop( new_pairs.first.first, segments )
+    chain = []
+    i_start = ((loop[1] == new_pairs.first.last) ? 1 : 0)
+    for i in i_start...loop.size
+      chain << loop[i]
+      break if new_pairs.include? loop[i]
+    end
+    other_chain = segments - chain
+    chain << line.dup
+    other_chain << line.dup
+    f1, f2 = dup, dup
+    f1.segments = chain
+    f2.segments = other_chain
+    [f1, f2]
   end
   
   def area
@@ -309,14 +361,17 @@ class Solid
   def boolean_union
     
   end
+  alias + boolean_union
   
   def boolean_subtraction
     
   end
+  alias - boolean_subtraction
   
   def boolean_difference
     
   end
+  alias & boolean_difference
   
   def intersections_with other
     cut_faces = []
