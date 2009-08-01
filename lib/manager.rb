@@ -569,7 +569,6 @@ public
     @keys_pressed.push key
     activate_tool( "camera", true ) if @keymap[key] == :Ctrl
     cancel_current_tool             if @keymap[key] == :Esc
-    working_level_up                if @keymap[key] == :Backspace
     delete_selected                 if @keymap[key] == :Del
   end
   
