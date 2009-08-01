@@ -288,12 +288,12 @@ class RevolveOperator < Operator
     bar.append( axis_button )
     bar.append( Gtk::SeparatorToolItem.new )
     # start angle
-    entry = MeasureEntry.new( GetText._("Start angle"), 0 )
+    entry = MeasureEntry.new( GetText._("Start angle"), false, 360 )
     entry.value = @settings[:start_angle]
     entry.on_change_value{|val| @settings[:start_angle] = val; show_changes}
     bar.append entry
     # end angle
-    entry = MeasureEntry.new( GetText._("End angle"), 360 )
+    entry = MeasureEntry.new( GetText._("End angle"), false, 360 )
     entry.value = @settings[:end_angle]
     entry.on_change_value{|val| @settings[:end_angle] = val; show_changes}
     bar.append entry

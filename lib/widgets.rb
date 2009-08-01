@@ -136,8 +136,9 @@ end
 
 class MeasureEntry < Gtk::VBox
   include Units
-  def initialize( label=nil, max_value=20 )
+  def initialize( label=nil, convert_units=true, max_value=20 )
     super false
+    @convert_units = convert_units
     @entry = Gtk::SpinButton.new( 0, max_value, 0.05 )
     @entry.update_policy = Gtk::SpinButton::UPDATE_IF_VALID
     @entry.activates_default = true
@@ -164,11 +165,11 @@ class MeasureEntry < Gtk::VBox
   end
   
   def value
-   ununit @entry.value
+   @convert_units ? ununit(@entry.value) : @entry.value
   end
   
   def value=( val )
-   @entry.value = enunit( val, false )
+   @entry.value = (@convert_units ? enunit( val, false ) : val)
   end
   
   def on_change_value
