@@ -88,8 +88,9 @@ class SketchTool < Tool
     
   def mouse_move( x,y, excluded=[] )
     super( x,y )
+    point = @glview.screen2world( x, y )
+    refit_plane world2sketch point if point and @autofit_plane
     if @does_snap
-      point = @glview.screen2world( x, y )
       if point and $manager.use_sketch_guides
         point = world2sketch point
         # determine point(s) to draw guide through
@@ -136,7 +137,8 @@ class SketchTool < Tool
   
   def click_left( x,y )
     super
-    @sketch.plane.resize2fit @sketch.segments.map{|s| s.snap_points }.flatten
+    point = @glview.screen2world( x, y )
+    refit_plane world2sketch point if point
   end
   
   def click_right( x,y, time )
@@ -189,6 +191,10 @@ class SketchTool < Tool
     GL.Enable(GL::DEPTH_TEST)
   end
   
+  def refit_plane point
+    @sketch.plane.resize2fit( @sketch.segments.map{|s| s.snap_points }.flatten + [point] )
+  end
+  
   def part2sketch v
     @sketch.plane.plane.part2plane v
   end
@@ -217,6 +223,7 @@ class LineTool < SketchTool
     super( GetText._("Click left to create a point, middle click to move points:"), sketch )
     @glview.window.cursor = Gdk::Cursor.new Gdk::Cursor::PENCIL if @glview.window
     @first_line = true
+    @autofit_plane = true
   end
   
   # add temporary line to sketch and add a new one
@@ -279,6 +286,7 @@ class ArcTool < SketchTool
     @glview.window.cursor = Gdk::Cursor.new Gdk::Cursor::PENCIL if @glview.window
     @step = 1
     @uses_toolbar = true
+    @autofit_plane = true
   end
 
   def click_left( x,y )
@@ -333,6 +341,7 @@ class CircleTool < SketchTool
     super( GetText._("Click left to select center:"), sketch )
     @glview.window.cursor = Gdk::Cursor.new Gdk::Cursor::PENCIL if @glview.window
     @step = 1
+    @autofit_plane = true
   end
   
   def click_left( x,y )
@@ -374,6 +383,7 @@ class TwoPointCircleTool < SketchTool
     super( GetText._("Click left to select first point on circle:"), sketch )
     @glview.window.cursor = Gdk::Cursor.new Gdk::Cursor::PENCIL if @glview.window
     @step = 1
+    @autofit_plane = true
   end
   
   def click_left( x,y )
@@ -411,6 +421,7 @@ class DimensionTool < SketchTool
     @points = []
     @selected_segments = []
     @does_snap = false
+    @autofit_plane = true
   end
   
   def click_left( x,y )
@@ -562,6 +573,7 @@ class SplineTool < SketchTool
     super( GetText._("Spline   L: add point   M: move points"), sketch )
     @glview.window.cursor = Gdk::Cursor.new Gdk::Cursor::PENCIL if @glview.window
     @points = []
+    @autofit_plane = true
   end
   
   def click_left( x,y )
@@ -662,6 +674,7 @@ class EditSketchTool < SketchTool
     mouse_move( x,y, true, [@draw_dot] )
     pos, dummy = snapped( x,y, [@draw_dot] )
     if pos and @drag_start
+      refit_plane pos
       move = @drag_start.vector_to pos
       if @draw_dot
         @draw_dot.x = @old_draw_dot.x + move.x

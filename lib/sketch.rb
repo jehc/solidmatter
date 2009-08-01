@@ -30,17 +30,20 @@ class WorkingPlane
   def resize2fit points
     unless points.empty?
       max_dist = points.map{|p| p.distance_to Vector[0,0,0] }.max
-      new_size = 4 * max_dist
-      step = (new_size - @size) / ($preferences[:transition_duration] / 2)
-      if step != 0
-        @size.step( new_size, step ) do |size|
-          @size = size
-          if $preferences[:animate_working_planes] or size == new_size
-            build_displaylists
-            $manager.glview.redraw
-          end
-        end
-      end
+      new_size = 3 * max_dist
+      # step = (new_size - @size) / ($preferences[:transition_duration] / 2)
+      # if step != 0
+      #   @size.step( new_size, step ) do |size|
+      #     @size = size
+      #     if $preferences[:animate_working_planes] or size == new_size
+      #       build_displaylists
+      #       $manager.glview.redraw
+      #     end
+      #   end
+      # end
+      @size = new_size
+      build_displaylists
+      $manager.glview.redraw
     end
   end
   
