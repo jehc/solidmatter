@@ -60,7 +60,7 @@ class InfiniteLine
   def intersect_with obj
     case obj
     when Plane
-      po, pn = plane.origin, plane.normal
+      po, pn = obj.origin, obj.normal
       t = (po - @pos).dot_product(pn) / @dir.dot_product(pn)
       # check if we really intersect
       t.infinite? ? nil : (@pos + @dir * t)

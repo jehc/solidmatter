@@ -90,6 +90,7 @@ class PartSelectionTool < SelectionTool
   
   def press_right( x,y, time )
     super
+    press_left( x,y )
     click_left( x,y )
     sel = $manager.selection.first
     menu = sel ? ComponentMenu.new( sel, :glview) : BackgroundMenu.new
