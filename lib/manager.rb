@@ -202,7 +202,7 @@ public
           change_working_level @project.main_assembly
           self.has_been_changed = false
           @project.rebuild
-          @project.all_parts.each{|p| p.build } #XXX this shouldn't really be needed
+          #@project.all_parts.each{|p| p.build } #XXX this shouldn't really be needed
           @glview.zoom_onto @project.all_part_instances.select{|i| i.visible }
         rescue
           dialog = Gtk::MessageDialog.new(@main_win, 
@@ -210,7 +210,7 @@ public
                                           Gtk::MessageDialog::WARNING,
                                           Gtk::MessageDialog::BUTTONS_CLOSE,
                                           GetText._("Bad file format"))
-          dialog.secondary_text = GetText._("The file format is unsupported.\nMaybe this file was saved with an older version of Solid|matter")
+          dialog.secondary_text = GetText._("The file format is unsupported.\nMaybe this file was saved with a more recent version of Solid|matter")
           dialog.run
           dialog.destroy
         end

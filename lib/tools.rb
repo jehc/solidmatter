@@ -13,6 +13,7 @@ class Tool
     @glview = $manager.glview
     create_toolbar
     @uses_toolbar = false
+    @init = true
     resume
   end
 public
@@ -64,6 +65,8 @@ public
   def resume
     @draw_routine = lambda{ @glview.object_space($manager.work_component){ draw } }
     @glview.immediate_draw_routines.push @draw_routine
+    mouse_move( *@glview.pointer ) unless @init
+    @init = false
     $manager.set_status_text @status_text
   end
   

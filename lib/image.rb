@@ -192,7 +192,7 @@ class Pixel
   end
   
   def to_s
-   return "r:#{@red} g:#{@green} b:#{@blue} a:#{@alpha}"
+   "r:#{@red} g:#{@green} b:#{@blue} a:#{@alpha}"
   end
   
   def to_a

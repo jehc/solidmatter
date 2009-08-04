@@ -636,6 +636,7 @@ class GLView < Gtk::DrawingArea
   def redraw
     glcontext = self.gl_context
     gldrawable = self.gl_drawable
+    return unless glcontext and gldrawable
     gldrawable.gl_begin( glcontext )
       glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE)
       GL.Clear(GL::COLOR_BUFFER_BIT)

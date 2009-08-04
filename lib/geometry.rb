@@ -174,7 +174,9 @@ class Line < Segment
   end
 
   def snap_points
-    super + [@pos1, @pos2, midpoint]
+    pnts = super + [@pos1, @pos2, midpoint]
+    pnts.each{|p| p.segment = self }
+    pnts
   end
   
   def dynamic_points
@@ -329,7 +331,9 @@ class Arc2D < Segment
 #  end
 
   def snap_points
-    super + [pos1, pos2, midpoint, @center]
+    pnts = super + [pos1, pos2, midpoint, @center]
+    pnts.each{|p| p.segment = self }
+    pnts
   end
   
   def midpoint

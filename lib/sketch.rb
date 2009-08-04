@@ -429,7 +429,7 @@ class CoincidentConstraint < SketchConstraint
   end
 
   def indirectly_constrained_objects
-    [@p1.segment, @p2.segment].uniq
+    [@p1.segment, @p2.segment].compact.uniq
   end
   
   def satisfied
