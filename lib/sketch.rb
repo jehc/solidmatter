@@ -22,6 +22,7 @@ class WorkingPlane
     @selection_pass_color = [1.0, 1.0, 1.0]
     @spacing = 0.05
     @size = 2
+    @min_size = 0.5
     @visible = false
     @parent = parent
     build_displaylists
@@ -41,7 +42,7 @@ class WorkingPlane
       #     end
       #   end
       # end
-      @size = new_size
+      @size = [new_size, @min_size].max
       build_displaylists
       $manager.glview.redraw
     end
