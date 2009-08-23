@@ -430,7 +430,7 @@ class Arc2D < Segment
     tesselate #if @points.empty?
     GL.Begin( GL::LINE_STRIP )
       for p in @points
-        #p = @plane.plane2part p unless @sketch
+        #p = @sketch.plane.plane.plane2part p if @sketch #unless @sketch
         GL.Vertex( p.x, p.y, p.z )
       end
     GL.End

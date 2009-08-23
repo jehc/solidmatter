@@ -287,7 +287,7 @@ end
 
 
 class GLView < Gtk::DrawingArea
-  attr_accessor :num_callists, :immediate_draw_routines, :selection_color, :render_reflections
+  attr_accessor :num_callists, :immediate_draw_routines, :selection_color, :render_reflections, :handles
   attr_reader :displaymode, :ground, :cameras, :current_cam_index, :render_shadows, :stereo
   def initialize
     super
@@ -1162,24 +1162,30 @@ end
 
 class ArrowHandle
   include Selectable
+  attr_accessor :pos, :dir
   def initialize( pos, dir )
-    
+    @pos = pos
+    @dir = dir
   end
   
   def draw
-    points = @selection.segments.map{|s| s.snap_points }.flatten
-    center = points.inject{|sum, p| sum + p } / points.size
-    q = GLU.NewQuadric
-    GL.PushMatrix 
-      GL.Rotatef(90, 1.0, 0.0, 0.0)
-      GL.Translatef( 1.0, 0.0, 0.0 )
-      GLU.Cylinder( q, 0.05, 0.05, 0.1, 8, 3 )
-    GL.PopMatrix
-    GLU.DeleteQuadric q
+    GL.Color3f( 129, 255, 51 )
+    real_draw
   end
   
   def draw_for_selection
+    GL.Color3f( *@selection_pass_color )
+    real_draw
+  end
   
+  def real_draw
+    q = GLU.NewQuadric
+    GL.PushMatrix 
+      GL.Rotatef(90, 1.0, 0.0, 0.0)
+      GL.Translatef( *pos.to_a )
+      GLU.Cylinder( q, 0.05, 0.05, 0.1, 8, 3 )
+    GL.PopMatrix
+    GLU.DeleteQuadric q
   end
 end
 

@@ -55,47 +55,103 @@ class SearchEntry < Gtk::ToolItem
 end
 
 
-class ShadingButton < Gtk::MenuToolButton
-  def initialize manager
-    icon = Gtk::Image.new( '../data/icons/middle/shaded.png' )
-    super( icon, GetText._('Shading') )
+#class ShadingButton < Gtk::MenuToolButton
+#  def initialize
+#    icon = Gtk::Image.new( '../data/icons/middle/shaded.png' )
+#    super( icon, GetText._('Shading') )
+#    menu = Gtk::Menu.new
+#    items = [
+#      Gtk::ImageMenuItem.new( GetText._("Shaded") ).set_image(      Gtk::Image.new('../data/icons/small/shaded.png') ),
+#      Gtk::ImageMenuItem.new( GetText._("Overlay") ).set_image(     Gtk::Image.new('../data/icons/small/overlay.png') ),
+#      Gtk::ImageMenuItem.new( GetText._("Wireframe") ).set_image(   Gtk::Image.new('../data/icons/small/wireframe.png') ),
+#      Gtk::ImageMenuItem.new( GetText._("Hidden Lines") ).set_image(Gtk::Image.new('../data/icons/small/hidden_lines.png') )
+#    ]
+#    items[0].signal_connect("activate") do
+#      @previous = $manager.glview.displaymode
+#      $manager.glview.set_displaymode :shaded
+#      icon.file = '../data/icons/middle/shaded.png'
+#    end
+#    items[1].signal_connect("activate") do
+#      @previous = $manager.glview.displaymode
+#      $manager.glview.set_displaymode :overlay
+#      icon.file = '../data/icons/middle/overlay.png'
+#    end
+#    items[2].signal_connect("activate") do
+#      @previous = $manager.glview.displaymode
+#      $manager.glview.set_displaymode :wireframe
+#      icon.file = '../data/icons/middle/wireframe.png'
+#    end
+#    items[3].signal_connect("activate") do
+#      @previous = $manager.glview.displaymode
+#      $manager.glview.set_displaymode :hidden_lines
+#      icon.file = '../data/icons/middle/hidden_lines.png'
+#    end
+#    items.each{|i| menu.append i }
+#    menu.show_all
+#    self.menu = menu
+#    signal_connect("clicked") do
+#      prev = $manager.glview.displaymode
+#      $manager.glview.set_displaymode @previous
+#      icon.file = "../data/icons/middle/#{@previous.to_s}.png"
+#      @previous = prev
+#    end
+#    @previous = :wireframe
+#  end
+#end
+
+
+class MultiToolButton < Gtk::MenuToolButton
+  def initialize( name, icon, items, main_callback, item_callback )
+    @icon = Gtk::Image.new icon
+    super( @icon, GetText._(name) )
     menu = Gtk::Menu.new
-    items = [
-      Gtk::ImageMenuItem.new( GetText._("Shaded") ).set_image(      Gtk::Image.new('../data/icons/small/shaded.png') ),
-      Gtk::ImageMenuItem.new( GetText._("Overlay") ).set_image(     Gtk::Image.new('../data/icons/small/overlay.png') ),
-      Gtk::ImageMenuItem.new( GetText._("Wireframe") ).set_image(   Gtk::Image.new('../data/icons/small/wireframe.png') ),
-      Gtk::ImageMenuItem.new( GetText._("Hidden Lines") ).set_image(Gtk::Image.new('../data/icons/small/hidden_lines.png') )
-    ]
-    items[0].signal_connect("activate") do
-      @previous = manager.glview.displaymode
-      manager.glview.set_displaymode :shaded
-      icon.file = '../data/icons/middle/shaded.png'
+    items.each do |name, handle, ic|
+      item = Gtk::ImageMenuItem.new( GetText._(name) ).set_image( Gtk::Image.new(ic) )
+      item.signal_connect("activate"){ item_callback.call handle }
+      @icon.file = ic.gsub('small', 'middle')
+      menu.append item
     end
-    items[1].signal_connect("activate") do
-      @previous = manager.glview.displaymode
-      manager.glview.set_displaymode :overlay
-      icon.file = '../data/icons/middle/overlay.png'
-    end
-    items[2].signal_connect("activate") do
-      @previous = manager.glview.displaymode
-      manager.glview.set_displaymode :wireframe
-      icon.file = '../data/icons/middle/wireframe.png'
-    end
-    items[3].signal_connect("activate") do
-      @previous = manager.glview.displaymode
-      manager.glview.set_displaymode :hidden_lines
-      icon.file = '../data/icons/middle/hidden_lines.png'
-    end
-    items.each{|i| menu.append i }
     menu.show_all
     self.menu = menu
-    signal_connect("clicked") do
-      prev = manager.glview.displaymode
-      manager.glview.set_displaymode @previous
-      icon.file = "../data/icons/middle/#{@previous.to_s}.png"
+    signal_connect("clicked"){ main_callback.call }
+  end
+end
+
+class ShadingButton < MultiToolButton
+  def initialize
+    items = [
+      ["Shaded",       :shaded,       '../data/icons/small/shaded.png'      ],
+      ["Overlay",      :overlay,      '../data/icons/small/overlay.png'     ],
+      ["Wireframe",    :wireframe,    '../data/icons/small/wireframe.png'   ],
+      ["Hidden Lines", :hidden_lines, '../data/icons/small/hidden_lines.png']
+    ]
+    main_callback = lambda do
+      prev = $manager.glview.displaymode
+      $manager.glview.set_displaymode @previous
+      @icon.file = "../data/icons/middle/#{@previous.to_s}.png"
       @previous = prev
     end
     @previous = :wireframe
+    item_callback = lambda do |handle|
+      @previous = $manager.glview.displaymode
+      $manager.glview.set_displaymode handle
+    end
+    super( 'Shading', items.first[2], items, main_callback, item_callback )
+  end
+end
+
+
+class SelectionToolsButton < MultiToolButton
+  def initialize
+    items = [
+      ["Select components", :select,          '../data/icons/small/list-add_small.png'],
+      ["Select operators",  :operator_select, '../data/icons/middle/list-add_small.png'],
+      ["Tweak geometry",    :tweak,           '../data/icons/middle/list-add_small.png']
+    ]
+    item_callback = lambda do |handle|
+      $manager.activate_tool handle.to_s
+    end
+    super( 'Shading', items.first[2], items, lambda{ }, item_callback )
   end
 end
 

@@ -140,12 +140,7 @@ class SolidMatterMainWin < Gtk::Window
     toolbar.append( save_btn, GetText._("Save current part or assembly"), "Toolbar/Save" )
     $manager.save_btn = save_btn
     toolbar.append( Gtk::SeparatorToolItem.new){}
-    select_button = Gtk::MenuToolButton.new( Gtk::Image.new( '../data/icons/middle/list-add_middle.png' ), GetText._('Select') )
-    select_button.signal_connect("clicked"){|b| $manager.activate_tool 'select' }
-    toolbar.append( select_button, GetText._("Choose selection mode") )
-    edge_button = Gtk::MenuToolButton.new( Gtk::Image.new( '../data/icons/middle/list-add_middle.png' ), GetText._('Select edges') )
-    edge_button.signal_connect("clicked"){|b| $manager.activate_tool 'edge_select' }
-    toolbar.append( edge_button, GetText._("Choose selection mode") )
+    toolbar.append( SelectionToolsButton.new, GetText._("Choose selection mode") )
     return_btn = toolbar.append( GetText._("Return"), GetText._("Work on parent assembly"),"Toolbar/Return", Gtk::Image.new('../data/icons/middle/edit-undo_middle.png') ){ $manager.working_level_up }
     return_btn.sensitive = false
     $manager.return_btn = return_btn
@@ -173,7 +168,7 @@ class SolidMatterMainWin < Gtk::Window
     toolbar.append( next_btn, GetText._("Next camera location"),"Toolbar/Next" )
     $manager.next_btn = next_btn
     toolbar.append( Gtk::SeparatorToolItem.new ){}
-    toolbar.append( ShadingButton.new($manager), GetText._("Select shading mode for the viewport") )
+    toolbar.append( ShadingButton.new, GetText._("Select shading mode for the viewport") )
     focus_btn = Gtk::ToggleToolButton.new
     focus_btn.icon_widget = Gtk::Image.new('../data/icons/middle/emblem-important_middle.png').show
     focus_btn.label = GetText._("Focus")

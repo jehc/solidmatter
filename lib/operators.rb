@@ -18,6 +18,10 @@ class ExtrudeOperator < Operator
     super
   end
   
+  def main_parameter
+    :depth
+  end
+  
   def real_operate
     @new_faces = []
     loops = @settings[:loops]
@@ -206,6 +210,10 @@ class RevolveOperator < Operator
       :axis => nil
     }
     super
+  end
+  
+  def main_parameter
+    :start_angle
   end
   
   def real_operate

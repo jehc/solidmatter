@@ -502,7 +502,7 @@ end
 
 class TweakTool < SelectionTool
     def initialize
-    super GetText._("Select solid faces and drag the arrow to change your objects shape:")
+    super GetText._("Select a face and drag the arrow to change the parts shape:")
   end
   
   def selection_modes
@@ -512,35 +512,62 @@ class TweakTool < SelectionTool
   def click_left( x,y )
     super
     if @current_face
-      points = @selection.segments.map{|s| s.snap_points }.flatten
+      points = @current_face.segments.map{|s| s.snap_points }.flatten
       center = points.inject{|sum, p| sum + p } / points.size
       $manager.glview.handles.delete @handle
-      @handle = ArrowHandle.new( center, dir )
+      @handle = ArrowHandle.new( center, dir, @current_face )
       $manager.glview.handles.push @handle
+      # find associated segment or op parameter to change
+      @op = @handle.face.created_by_op
+      if seg = @handle.face.created_by_segment
+        @segment = seg
+      else
+        @param = ParamProxy.new( op.settings, op.main_parameter )
+      end
+    else
+      $manager.glview.handles.delete @handle
+      @handle = nil
+      @op = nil
+      @segment = nil
+      @param = nil
     end
   end
   
-  def press_left
+  def press_left( x,y )
     super
     mouse_move( x,y )
-    if @current_handle
-    
+    if @handle
+      @start = Vector[x,y,0]
+      @start_pos = @handle.pos
+      @start_value = @param.get
     end
   end
   
   def drag_left( x,y )
-    
+    return unless @handle
+    diff = @start.distance_to( Vector[x,y,0] ) * 0.01
+    @handle.pos += @start_pos + @handle.dir * diff
+    if @param
+      @param.set @start_value + diff
+    else
+      for p in @segment.dynamic_points
+        p.take_coords_from( p + @handle.dir * diff)
+      end
+      @segment.sketch.update_constraints [@segment]
+      #@segment.sketch.build_displaylist
+    end
+    @op.part.rebuild op
+    @glview.redraw
   end
-  
-  def release_left
-    
-  end
-  
+
   def mouse_move( x,y )
     super
     @current_face = @glview.select(x,y, [:faces])
-    @current_face = nil unless $manager.work_component.solid.faces.include? @current_face
-    @current_handle = @glview.select(x,y, [:handles])
+    solids = $manager.work_component.class == Assembly ? 
+             $manager.work_component.contained_parts.map(&:solid) : 
+             [$manager.work_component.solid]
+    @current_face = nil unless solids.any?{|s| s.faces.include? @current_face }
+    @handle = @glview.select(x,y, [:handles])
     @glview.redraw
   end
   
@@ -555,6 +582,31 @@ class TweakTool < SelectionTool
   def exit
     $manager.glview.handles.delete @handle
     super
+  end
+end
+
+class ParamProxy
+  def initialize( obj, param, &b )
+    @obj = obj
+    @param = param
+    @handler = b if block_given?
+  end
+  
+  def get
+    if @obj.is_a? Hash
+      @obj[@param]
+    else
+      @obj.send @param
+    end
+  end
+  
+  def set value
+    if @obj.is_a? Hash
+      @obj[@param] = value
+    else
+      @obj.send "#{@param}=", value
+    end
+    @handler.call if @handler
   end
 end
 

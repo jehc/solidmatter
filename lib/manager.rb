@@ -444,6 +444,8 @@ public
         tool = EdgeSelectionTool.new( &block )
       when 'measure_distance'
         tool = MeasureDistanceTool.new( &block )
+      when 'tweak'
+        tool = TweakTool.new( &block )
       when 'plane'
         tool = PlaneTool.new( &block )
       when 'line'

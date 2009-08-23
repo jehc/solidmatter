@@ -408,7 +408,7 @@ class TwoPointCircleTool < SketchTool
     point, was_snapped = snapped( x,y )
     @draw_dot = was_snapped ? point : nil
     if point and @step == 2
-      @temp_segments = [ Circle2D::from_opposite_points( @p1, point, @sketch.plane.plane.dup ) ]
+      @temp_segments = [ Circle2D::from_opposite_points( @p1, point, @sketch ) ]
     end
     @glview.redraw
   end
