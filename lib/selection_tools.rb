@@ -514,19 +514,22 @@ class TweakTool < SelectionTool
     if @current_face
       points = @current_face.segments.map{|s| s.snap_points }.flatten
       center = points.inject{|sum, p| sum + p } / points.size
+      center = @current_face.created_by_op.part.part2world center
       $manager.glview.handles.delete @handle
-      @handle = ArrowHandle.new( center, dir, @current_face )
+      @handle = ArrowHandle.new( center, @current_face )
       $manager.glview.handles.push @handle
+      @glview.rebuild_selection_pass_colors selection_modes
       # find associated segment or op parameter to change
       @op = @handle.face.created_by_op
       if seg = @handle.face.created_by_segment
         @segment = seg
       else
-        @param = ParamProxy.new( op.settings, op.main_parameter )
+        @param = ParamProxy.new( @op.settings, @op.main_parameter )
       end
     else
       $manager.glview.handles.delete @handle
       @handle = nil
+      @current_handle = nil
       @op = nil
       @segment = nil
       @param = nil
@@ -536,27 +539,28 @@ class TweakTool < SelectionTool
   def press_left( x,y )
     super
     mouse_move( x,y )
-    if @handle
-      @start = Vector[x,y,0]
-      @start_pos = @handle.pos
-      @start_value = @param.get
+    if @current_handle
+      @start_value = @param.get if @param
+      @drag_start = @glview.pos_on_plane_through_point( x,y, @handle.pos )
     end
   end
   
   def drag_left( x,y )
-    return unless @handle
-    diff = @start.distance_to( Vector[x,y,0] ) * 0.01
-    @handle.pos += @start_pos + @handle.dir * diff
+    return unless @current_handle
+    pos = @glview.pos_on_plane_through_point( x,y, @handle.pos )
+    drag_axis = Line.new( @drag_start, @drag_start + @handle.dir )
+    trans = @drag_start.vector_to drag_axis.closest_point pos
+    @handle.pos = @drag_start + trans
     if @param
-      @param.set @start_value + diff
+      is_in_arrow_direction = @handle.dir.normalize.near_to trans.normalize
+      @param.set @start_value + trans.length * (is_in_arrow_direction ? 1 : -1)
     else
       for p in @segment.dynamic_points
-        p.take_coords_from( p + @handle.dir * diff)
+        p.take_coords_from( p + trans )
       end
       @segment.sketch.update_constraints [@segment]
-      #@segment.sketch.build_displaylist
     end
-    @op.part.rebuild op
+    @op.part.build @op
     @glview.redraw
   end
 
@@ -567,7 +571,7 @@ class TweakTool < SelectionTool
              $manager.work_component.contained_parts.map(&:solid) : 
              [$manager.work_component.solid]
     @current_face = nil unless solids.any?{|s| s.faces.include? @current_face }
-    @handle = @glview.select(x,y, [:handles])
+    @current_handle = ((h = @glview.select(x,y, [:handles]) and h.is_a? Handle) ? h : nil)
     @glview.redraw
   end
   

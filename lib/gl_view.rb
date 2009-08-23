@@ -888,9 +888,10 @@ class GLView < Gtk::DrawingArea
           end
         when :dimensions
           @selectables += $manager.work_component.dimensions
+        when :handles
+          @selectables += @handles
         end
       end
-      @selectables += @handles
       # create colors to represent selectable objects
       current_color = [0, 0, 0]
       @color_increment = 1.0 / 255
@@ -1160,16 +1161,25 @@ class GLView < Gtk::DrawingArea
 end
 
 
-class ArrowHandle
+class Handle 
+end
+
+class ArrowHandle < Handle
   include Selectable
-  attr_accessor :pos, :dir
-  def initialize( pos, dir )
+  attr_accessor :pos, :dir, :face
+  def initialize( pos, face )
     @pos = pos
-    @dir = dir
+    @face = face
+    case face
+    when PlanarFace
+      @dir = face.plane.normal
+    when CircularFace
+      @dir = (face.plane.pos.vector_to face.plane.closest_point pos).normalize
+    end
   end
   
   def draw
-    GL.Color3f( 129, 255, 51 )
+    GL.Color3f( 0.5, 1.0, 0.2 )
     real_draw
   end
   
@@ -1183,7 +1193,7 @@ class ArrowHandle
     GL.PushMatrix 
       GL.Rotatef(90, 1.0, 0.0, 0.0)
       GL.Translatef( *pos.to_a )
-      GLU.Cylinder( q, 0.05, 0.05, 0.1, 8, 3 )
+      GLU.Cylinder( q, 0.02, 0.02, 0.1, 12, 3 )
     GL.PopMatrix
     GLU.DeleteQuadric q
   end

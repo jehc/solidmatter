@@ -69,6 +69,7 @@ class ExtrudeOperator < Operator
             plane.origin = sketch.plane.plane.plane2part seg.center
             face = CircularFace.new( plane, seg.radius, @settings[:depth] * (@settings[:direction] == :up ? 1 : -1), seg.start_angle, seg.end_angle )
           end
+          face.created_by_segment = seg
           @solid.add_face face
           @new_faces << face
         end

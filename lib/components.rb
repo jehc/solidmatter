@@ -26,7 +26,7 @@ end
 class Face
   include Selectable
   include ChainCompletion
-  attr_accessor :segments, :solid, :created_by_op
+  attr_accessor :segments, :solid, :created_by_op, :created_by_segment
   def initialize op=nil
     @created_by_op = op
     @segments = []
