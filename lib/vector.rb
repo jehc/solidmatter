@@ -132,6 +132,12 @@ class Vector
     cross_product(other).length.nearly_equals 0
   end
   
+  def to_polar
+    a1 = Math.atan2(y,x)
+    a2 = Math::PI/2 - atan( z / Math.sqrt(x**2 + y**2) )
+    [a1, a2]
+  end
+  
   def dup
     copy = super
     copy.elements = @elements.dup

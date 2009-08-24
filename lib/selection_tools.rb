@@ -523,8 +523,10 @@ class TweakTool < SelectionTool
       @op = @handle.face.created_by_op
       if seg = @handle.face.created_by_segment
         @segment = seg
+        @param = nil
       else
         @param = ParamProxy.new( @op.settings, @op.main_parameter )
+        @segment = nil
       end
     else
       $manager.glview.handles.delete @handle
@@ -541,7 +543,7 @@ class TweakTool < SelectionTool
     mouse_move( x,y )
     if @current_handle
       @start_value = @param.get if @param
-      @drag_start = @glview.pos_on_plane_through_point( x,y, @handle.pos )
+      @drag_start = @handle.pos
     end
   end
   
@@ -555,8 +557,9 @@ class TweakTool < SelectionTool
       is_in_arrow_direction = @handle.dir.normalize.near_to trans.normalize
       @param.set @start_value + trans.length * (is_in_arrow_direction ? 1 : -1)
     else
+      sketch_trans = @segment.sketch.plane.plane.part2plane @segment.sketch.parent.world2part trans
       for p in @segment.dynamic_points
-        p.take_coords_from( p + trans )
+        p.take_coords_from( p + sketch_trans )
       end
       @segment.sketch.update_constraints [@segment]
     end
@@ -572,6 +575,7 @@ class TweakTool < SelectionTool
              [$manager.work_component.solid]
     @current_face = nil unless solids.any?{|s| s.faces.include? @current_face }
     @current_handle = ((h = @glview.select(x,y, [:handles]) and h.is_a? Handle) ? h : nil)
+    @handle.highlighted = (@current_handle ? true : false) if @handle
     @glview.redraw
   end
   

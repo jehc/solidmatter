@@ -1166,7 +1166,7 @@ end
 
 class ArrowHandle < Handle
   include Selectable
-  attr_accessor :pos, :dir, :face
+  attr_accessor :pos, :dir, :face, :highlighted
   def initialize( pos, face )
     @pos = pos
     @face = face
@@ -1179,7 +1179,11 @@ class ArrowHandle < Handle
   end
   
   def draw
-    GL.Color3f( 0.5, 1.0, 0.2 )
+    @highlighted ? GL.Color3f( 0.2, 0.5, 1.0 ) : GL.Color3f( 0.1, 1.0, 0.2 )
+    GL.Begin( GL::LINES )
+      GL.Vertex( *(@pos - @dir * 100).to_a )
+      GL.Vertex( *(@pos + @dir * 100).to_a )
+    GL.End
     real_draw
   end
   
@@ -1191,9 +1195,8 @@ class ArrowHandle < Handle
   def real_draw
     q = GLU.NewQuadric
     GL.PushMatrix 
-      GL.Rotatef(90, 1.0, 0.0, 0.0)
-      GL.Translatef( *pos.to_a )
-      GLU.Cylinder( q, 0.02, 0.02, 0.1, 12, 3 )
+    GL.Translatef( *pos.to_a )
+      GLU.Sphere( q, 0.02, 8, 8 )
     GL.PopMatrix
     GLU.DeleteQuadric q
   end
