@@ -166,6 +166,7 @@ class PlanarFace < Face
 end
 
 class CircularFace < Face
+  attr_accessor :plane, :radius
   def initialize( plane, radius, height, start_angle, end_angle )
     super()
     @plane       = plane.dup

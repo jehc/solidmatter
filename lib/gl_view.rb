@@ -1167,14 +1167,17 @@ end
 class ArrowHandle < Handle
   include Selectable
   attr_accessor :pos, :dir, :face, :highlighted
-  def initialize( pos, face )
-    @pos = pos
+  def initialize( prefered_pos, face )
     @face = face
     case face
     when PlanarFace
       @dir = face.plane.normal
+      points = face.segments.map(&:snap_points).flatten
+      center = points.inject{|sum, p| sum + p } / points.size
+      @pos = face.created_by_op.part.part2world center
     when CircularFace
-      @dir = (face.plane.pos.vector_to face.plane.closest_point pos).normalize
+      @dir = (face.plane.origin.vector_to face.plane.closest_point prefered_pos).normalize
+      @pos = prefered_pos
     end
   end
   

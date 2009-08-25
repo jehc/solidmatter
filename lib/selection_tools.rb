@@ -512,11 +512,9 @@ class TweakTool < SelectionTool
   def click_left( x,y )
     super
     if @current_face
-      points = @current_face.segments.map{|s| s.snap_points }.flatten
-      center = points.inject{|sum, p| sum + p } / points.size
-      center = @current_face.created_by_op.part.part2world center
       $manager.glview.handles.delete @handle
-      @handle = ArrowHandle.new( center, @current_face )
+      pos = @glview.screen2world( x,y )
+      @handle = ArrowHandle.new( pos, @current_face )
       $manager.glview.handles.push @handle
       @glview.rebuild_selection_pass_colors selection_modes
       # find associated segment or op parameter to change
@@ -528,6 +526,7 @@ class TweakTool < SelectionTool
         @param = ParamProxy.new( @op.settings, @op.main_parameter )
         @segment = nil
       end
+      mouse_move( x,y )
     else
       $manager.glview.handles.delete @handle
       @handle = nil
@@ -544,6 +543,7 @@ class TweakTool < SelectionTool
     if @current_handle
       @start_value = @param.get if @param
       @drag_start = @handle.pos
+      @old_points = Marshal.load(Marshal.dump(@segment.dynamic_points)) if @segment
     end
   end
   
@@ -558,10 +558,10 @@ class TweakTool < SelectionTool
       @param.set @start_value + trans.length * (is_in_arrow_direction ? 1 : -1)
     else
       sketch_trans = @segment.sketch.plane.plane.part2plane @segment.sketch.parent.world2part trans
-      for p in @segment.dynamic_points
-        p.take_coords_from( p + sketch_trans )
+      @segment.dynamic_points.zip( @old_points ).each do |p, old|
+        p.take_coords_from old + sketch_trans
       end
-      @segment.sketch.update_constraints [@segment]
+      3.times{ @segment.sketch.update_constraints @segment.dynamic_points }
     end
     @op.part.build @op
     @glview.redraw
