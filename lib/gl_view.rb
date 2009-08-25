@@ -1194,10 +1194,12 @@ class ArrowHandle < Handle
   
   def real_draw
     q = GLU.NewQuadric
+    GL.Disable(GL::DEPTH_TEST)
     GL.PushMatrix 
     GL.Translatef( *pos.to_a )
       GLU.Sphere( q, 0.02, 8, 8 )
     GL.PopMatrix
+    GL.Enable(GL::DEPTH_TEST)
     GLU.DeleteQuadric q
   end
 end
