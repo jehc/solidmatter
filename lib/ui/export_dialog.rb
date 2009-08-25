@@ -10,7 +10,6 @@ class ExportDialog
 	  @glade = GladeXML.new( "../data/glade/export_dialog.glade", nil, 'solidmatter' ) {|handler| method(handler)}
     @block = block
     @formats = ['STL', 'lxs']
-    @glade['format_combo'].model.clear
     @formats.each{|f| @glade['format_combo'].append_text f }
     @glade['format_combo'].active = 0
   end
